@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "scheme": "acme",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "output": "static"
+    },
+    "name": "ReceiptRival",
+    "slug": "ReceiptRival",
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
