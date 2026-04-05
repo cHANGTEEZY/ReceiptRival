@@ -9,3 +9,48 @@
  *   - If global.css is in src/styles/: ../../node_modules/heroui-native/lib
  */
 @source '../node_modules/heroui-native/lib';
+
+/* Expo `useFonts` keys — must match src/hooks/useFonts.ts */
+@theme {
+  --font-sans: PlusJakartaSans_400Regular;
+  --font-inter: Inter_400Regular;
+}
+
+/*
+ * React Native uses per-file font families; map Tailwind weight utilities to the
+ * loaded Plus Jakarta files so `font-semibold` / `font-bold` render correctly.
+ */
+@utility font-normal {
+  font-family: PlusJakartaSans_400Regular;
+  font-weight: 400;
+}
+
+@utility font-medium {
+  font-family: PlusJakartaSans_500Medium;
+  font-weight: 500;
+}
+
+@utility font-semibold {
+  font-family: PlusJakartaSans_600SemiBold;
+  font-weight: 600;
+}
+
+@utility font-bold {
+  font-family: PlusJakartaSans_700Bold;
+  font-weight: 700;
+}
+
+@utility font-extrabold {
+  font-family: PlusJakartaSans_800ExtraBold;
+  font-weight: 800;
+}
+
+@utility font-inter-medium {
+  font-family: Inter_500Medium;
+  font-weight: 500;
+}
+
+@utility font-inter-semibold {
+  font-family: Inter_600SemiBold;
+  font-weight: 600;
+}

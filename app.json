@@ -9,13 +9,15 @@
     "name": "ReceiptRival",
     "slug": "ReceiptRival",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ],
     "android": {
       "package": "com.changteezy.ReceiptRival"
     },
     "ios": {
-      "bundleIdentifier": "com.changteezy.ReceiptRival"
+      "bundleIdentifier": "com.changteezy.ReceiptRival",
+      "appleTeamId": "XPZVK3T5VQ"
     }
   }
 }
