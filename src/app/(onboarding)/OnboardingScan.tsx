@@ -1,11 +1,12 @@
 import { StyleSheet, Text, View } from "react-native";
 import React from "react";
+import SafeAreaWrapper from "../../components/SafeAreaWrapper";
 
 const OnboardingScan = () => {
   return (
-    <View>
+    <SafeAreaWrapper>
       <Text>OnboardingScan</Text>
-    </View>
+    </SafeAreaWrapper>
   );
 };
 
