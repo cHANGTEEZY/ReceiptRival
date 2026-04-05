@@ -10,6 +10,12 @@
     "slug": "ReceiptRival",
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "android": {
+      "package": "com.changteezy.ReceiptRival"
+    },
+    "ios": {
+      "bundleIdentifier": "com.changteezy.ReceiptRival"
+    }
   }
 }
