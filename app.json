@@ -10,7 +10,8 @@
     "slug": "ReceiptRival",
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "expo-asset"
     ],
     "android": {
       "package": "com.changteezy.ReceiptRival"
