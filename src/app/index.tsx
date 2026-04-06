@@ -3,10 +3,10 @@ import { Redirect } from "expo-router";
 import { store } from "../lib/key-store";
 
 export default function Index() {
-  const isLoggedIn = false;
-  const isOnboardingComplete = store.getString("isOnboardingComplete");
+  const isOnboardingComplete =
+    store.getString("isOnboardingComplete") === "true";
 
-  if (!isLoggedIn && !isOnboardingComplete) {
+  if (!isOnboardingComplete) {
     return <Redirect href="/(onboarding)/OnboardingAssign" />;
   }
 

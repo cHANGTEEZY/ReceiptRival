@@ -1,72 +1,107 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  Text,
-  View,
-  useColorScheme,
-} from "react-native";
+import React, { useCallback, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, Text, View, useColorScheme } from "react-native";
 import { KeyboardAvoidingWrapper } from "../../components/SafeAreaWrapper";
+import ReceiptRival from "../../components/ReceiptRival";
 import { authClient } from "../../lib/auth-client";
 import {
   Button,
   Card,
-  Description,
   FieldError,
   InputGroup,
   Label,
   TextField,
 } from "heroui-native";
+import { PasswordToggleInput } from "./PasswordToggleInput";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type FieldErrs = {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirm?: string;
+};
 
 export default function SignupScreen() {
   const colorScheme = useColorScheme();
   const iconMuted = colorScheme === "dark" ? "#a3a3a3" : "#737373";
   const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const formRef = useRef({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [fieldErrs, setFieldErrs] = useState<FieldErrs>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const nameEmpty = submitted && name.trim() === "";
-  const emailEmpty = submitted && email.trim() === "";
-  const emailBadFormat =
-    submitted &&
-    email.trim() !== "" &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const passwordShort = submitted && password.length < 6;
-  const confirmInvalid =
-    submitted &&
-    (confirmPassword.length === 0 || password !== confirmPassword);
+  const clearNameError = useCallback(() => {
+    setFieldErrs((prev) => {
+      if (!prev.name) return prev;
+      const { name: _, ...rest } = prev;
+      return rest;
+    });
+  }, []);
+
+  const clearEmailError = useCallback(() => {
+    setFieldErrs((prev) => {
+      if (!prev.email) return prev;
+      const { email: _, ...rest } = prev;
+      return rest;
+    });
+  }, []);
+
+  const clearPasswordError = useCallback(() => {
+    setFieldErrs((prev) => {
+      if (!prev.password) return prev;
+      const { password: _, ...rest } = prev;
+      return rest;
+    });
+  }, []);
+
+  const clearConfirmError = useCallback(() => {
+    setFieldErrs((prev) => {
+      if (!prev.confirm) return prev;
+      const { confirm: _, ...rest } = prev;
+      return rest;
+    });
+  }, []);
 
   const onSubmit = useCallback(async () => {
-    setSubmitted(true);
     setApiError(null);
+    const name = formRef.current.name.trim();
+    const email = formRef.current.email.trim();
+    const password = formRef.current.password;
+    const confirmPassword = formRef.current.confirmPassword;
 
-    if (
-      name.trim() === "" ||
-      email.trim() === "" ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ||
-      password.length < 6 ||
-      confirmPassword.length === 0 ||
-      password !== confirmPassword
-    ) {
+    const next: FieldErrs = {};
+
+    if (name === "") next.name = "Name is required.";
+    if (email === "") next.email = "Email is required.";
+    else if (!EMAIL_RE.test(email))
+      next.email = "Enter a valid email address.";
+    if (password.length < 6)
+      next.password = "Password must be at least 6 characters.";
+    if (confirmPassword.length === 0)
+      next.confirm = "Confirm your password.";
+    else if (password !== confirmPassword)
+      next.confirm = "Passwords do not match.";
+
+    if (Object.keys(next).length > 0) {
+      setFieldErrs(next);
       return;
     }
 
+    setFieldErrs({});
     setIsSubmitting(true);
     try {
       const { error } = await authClient.signUp.email({
-        name: name.trim(),
-        email: email.trim(),
+        name,
+        email,
         password,
       });
 
@@ -81,46 +116,56 @@ export default function SignupScreen() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [email, name, password, confirmPassword, router]);
+  }, [router]);
+
+  const formRefAsRecord = formRef as React.MutableRefObject<
+    Record<string, string>
+  >;
 
   return (
     <KeyboardAvoidingWrapper
       keyboardDismissMode="interactive"
       contentContainerStyle={{
-        justifyContent: "center",
+        justifyContent: "flex-start",
         paddingHorizontal: 24,
-        paddingVertical: 24,
+        paddingTop: 12,
+        paddingBottom: 40,
       }}
     >
-      <View>
-        <View>
-          <Text className="text-foreground text-4xl font-bold text-center leading-tight">
-            Join the
+      <View className="gap-4">
+        <View className="items-center gap-2">
+          <ReceiptRival />
+          <Text className="text-center text-[11px] font-bold uppercase tracking-[0.22em] text-purple-300/90">
+            Sign up
           </Text>
-          <Text className="text-foreground text-4xl font-bold text-center leading-tight">
-            Rivalry.
+          <Text className="text-center text-4xl font-bold leading-tight text-foreground">
+            Create your account
           </Text>
-          <Text className="text-xl text-muted-foreground text-center">
-            Create an account to split smarter.
+          <Text className="text-center text-lg leading-6 text-muted-foreground">
+            Same flow as sign in—add your details below and you&apos;re ready to
+            split receipts.
           </Text>
         </View>
 
-        <Card variant="transparent">
-          <Card.Header className="px-1 pb-1 pt-1">
-            <Card.Title className="text-2xl">Sign up</Card.Title>
+        <Card
+          variant="transparent"
+          className="rounded-2xl border border-border/80"
+        >
+          <Card.Header className="px-1 pb-0.5 pt-0">
+            <Card.Title className="text-2xl">Your details</Card.Title>
             <Card.Description>
-              Enter your details to create your account.
+              Name, email, and a password—that&apos;s all we need.
             </Card.Description>
           </Card.Header>
 
-          <Card.Body className="gap-4 px-1 py-5">
+          <Card.Body className="gap-4 px-1 py-3">
             {apiError ? (
               <View className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2">
                 <Text className="text-destructive text-sm">{apiError}</Text>
               </View>
             ) : null}
 
-            <TextField isRequired isInvalid={nameEmpty}>
+            <TextField isRequired isInvalid={Boolean(fieldErrs.name)}>
               <Label>
                 <Label.Text>Name</Label.Text>
               </Label>
@@ -132,16 +177,19 @@ export default function SignupScreen() {
                   placeholder="Alex Rival"
                   autoCapitalize="words"
                   autoComplete="name"
-                  value={name}
-                  onChangeText={setName}
+                  defaultValue=""
+                  onChangeText={(t) => {
+                    formRef.current.name = t;
+                    clearNameError();
+                  }}
                 />
               </InputGroup>
-              {nameEmpty && (
-                <FieldError>Name is required.</FieldError>
-              )}
+              {fieldErrs.name ? (
+                <FieldError>{fieldErrs.name}</FieldError>
+              ) : null}
             </TextField>
 
-            <TextField isRequired isInvalid={emailEmpty || emailBadFormat}>
+            <TextField isRequired isInvalid={Boolean(fieldErrs.email)}>
               <Label>
                 <Label.Text>Email</Label.Text>
               </Label>
@@ -154,113 +202,44 @@ export default function SignupScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
-                  value={email}
-                  onChangeText={setEmail}
+                  defaultValue=""
+                  onChangeText={(t) => {
+                    formRef.current.email = t;
+                    clearEmailError();
+                  }}
                 />
               </InputGroup>
-              {(emailEmpty || emailBadFormat) && (
-                <FieldError>
-                  {emailEmpty
-                    ? "Email is required."
-                    : "Enter a valid email address."}
-                </FieldError>
-              )}
+              {fieldErrs.email ? (
+                <FieldError>{fieldErrs.email}</FieldError>
+              ) : null}
             </TextField>
 
-            <TextField isRequired isInvalid={passwordShort}>
-              <Label>
-                <Label.Text>Password</Label.Text>
-              </Label>
-              <InputGroup>
-                <InputGroup.Prefix isDecorative>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color={iconMuted}
-                  />
-                </InputGroup.Prefix>
-                <InputGroup.Input
-                  placeholder="••••••••"
-                  secureTextEntry={!showPassword}
-                  autoComplete="new-password"
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                <InputGroup.Suffix>
-                  <Pressable
-                    hitSlop={8}
-                    onPress={() => setShowPassword((v) => !v)}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
-                      size={20}
-                      color={iconMuted}
-                    />
-                  </Pressable>
-                </InputGroup.Suffix>
-              </InputGroup>
-              <Description>Use at least 6 characters.</Description>
-              {passwordShort && (
-                <FieldError>Password must be at least 6 characters.</FieldError>
-              )}
-            </TextField>
+            <PasswordToggleInput
+              label="Password"
+              iconMuted={iconMuted}
+              autoComplete="new-password"
+              description="Use at least 6 characters."
+              errorText={fieldErrs.password ?? null}
+              onValueChange={clearPasswordError}
+              formRef={formRefAsRecord}
+              fieldKey="password"
+            />
 
-            <TextField isRequired isInvalid={confirmInvalid}>
-              <Label>
-                <Label.Text>Confirm password</Label.Text>
-              </Label>
-              <InputGroup>
-                <InputGroup.Prefix isDecorative>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color={iconMuted}
-                  />
-                </InputGroup.Prefix>
-                <InputGroup.Input
-                  placeholder="••••••••"
-                  secureTextEntry={!showConfirmPassword}
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                />
-                <InputGroup.Suffix>
-                  <Pressable
-                    hitSlop={8}
-                    onPress={() => setShowConfirmPassword((v) => !v)}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      showConfirmPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    <Ionicons
-                      name={
-                        showConfirmPassword ? "eye-off-outline" : "eye-outline"
-                      }
-                      size={20}
-                      color={iconMuted}
-                    />
-                  </Pressable>
-                </InputGroup.Suffix>
-              </InputGroup>
-              {confirmInvalid && (
-                <FieldError>
-                  {confirmPassword.length === 0
-                    ? "Confirm your password."
-                    : "Passwords do not match."}
-                </FieldError>
-              )}
-            </TextField>
+            <PasswordToggleInput
+              label="Confirm password"
+              iconMuted={iconMuted}
+              autoComplete="new-password"
+              errorText={fieldErrs.confirm ?? null}
+              onValueChange={clearConfirmError}
+              formRef={formRefAsRecord}
+              fieldKey="confirmPassword"
+            />
           </Card.Body>
 
-          <Card.Footer className="gap-4 px-1 pb-2 pt-2">
+          <Card.Footer className="gap-4 px-1 pb-2 pt-1">
             <Button
               className="w-full"
-              onPress={onSubmit}
+              onPress={() => void onSubmit()}
               isDisabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -270,6 +249,7 @@ export default function SignupScreen() {
               )}
             </Button>
 
+            {/* OAuth — re-enable when Apple / Google are wired up
             <View className="flex-row items-center gap-3">
               <View className="h-px flex-1 bg-border-secondary" />
               <Text className="text-foreground text-lg">or</Text>
@@ -283,7 +263,13 @@ export default function SignupScreen() {
                   className="flex-1"
                   feedbackVariant="scale-highlight"
                   isDisabled={isSubmitting}
-                  onPress={() => console.log("apple signup")}
+                  onPress={() => {
+                    console.log("apple signup");
+                    toast.show({
+                      variant: "warning",
+                      label: "Apple sign in Coming soon",
+                    });
+                  }}
                 >
                   <Ionicons name="logo-apple" size={20} color={iconMuted} />
                   <Button.Label>Apple</Button.Label>
@@ -294,20 +280,29 @@ export default function SignupScreen() {
                 className="flex-1"
                 feedbackVariant="scale-highlight"
                 isDisabled={isSubmitting}
-                onPress={() => console.log("google signup")}
+                onPress={() => {
+                  console.log("google signup");
+                  toast.show({
+                    variant: "warning",
+                    label: "Google sign in Coming soon",
+                  });
+                }}
               >
                 <Ionicons name="logo-google" size={20} color={iconMuted} />
                 <Button.Label>Google</Button.Label>
               </Button>
             </View>
+            */}
           </Card.Footer>
         </Card>
 
-        <View className="flex-row justify-center flex-wrap gap-1">
-          <Text className="text-accent-foreground text-lg">Already in?</Text>
+        <View className="flex-row flex-wrap justify-center gap-1 pb-4">
+          <Text className="text-lg text-foreground">
+            Already have an account?
+          </Text>
           <Link href="/login" asChild>
             <Pressable hitSlop={8}>
-              <Text className="text-purple-300 text-lg font-semibold">
+              <Text className="text-lg font-semibold text-purple-300">
                 Sign in
               </Text>
             </Pressable>

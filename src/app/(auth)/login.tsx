@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
-import React, { useCallback, useState } from "react";
-import { Platform, Pressable, Text, View, useColorScheme } from "react-native";
+import React, { useCallback, useRef, useState } from "react";
+import { Pressable, Text, View, useColorScheme } from "react-native";
 import { KeyboardAvoidingWrapper } from "../../components/SafeAreaWrapper";
 import {
   Button,
@@ -14,39 +14,59 @@ import {
   useToast,
 } from "heroui-native";
 import { authClient } from "../../lib/auth-client";
+import ReceiptRival from "../../components/ReceiptRival";
+import { PasswordToggleInput } from "./PasswordToggleInput";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type FieldErrs = { email?: string; password?: string };
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const iconMuted = colorScheme === "dark" ? "#a3a3a3" : "#737373";
   const { toast } = useToast();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const formRef = useRef({ email: "", password: "" });
+  const [fieldErrs, setFieldErrs] = useState<FieldErrs>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const emailEmpty = submitted && email.trim() === "";
-  const emailBadFormat =
-    submitted &&
-    email.trim() !== "" &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const passwordShort = submitted && password.length < 6;
+  const clearEmailFieldError = useCallback(() => {
+    setFieldErrs((prev) => {
+      if (!prev.email) return prev;
+      const { email: _, ...rest } = prev;
+      return rest;
+    });
+  }, []);
+
+  const clearPasswordFieldError = useCallback(() => {
+    setFieldErrs((prev) => {
+      if (!prev.password) return prev;
+      const { password: _, ...rest } = prev;
+      return rest;
+    });
+  }, []);
 
   const onSubmit = useCallback(async () => {
-    setSubmitted(true);
-    if (
-      email.trim() === "" ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ||
-      password.length < 6
-    ) {
+    const rawEmail = formRef.current.email.trim();
+    const password = formRef.current.password;
+    const next: FieldErrs = {};
+
+    if (rawEmail === "") next.email = "Email is required.";
+    else if (!EMAIL_RE.test(rawEmail))
+      next.email = "Enter a valid email address.";
+    if (password.length < 6)
+      next.password = "Password must be at least 6 characters.";
+
+    if (Object.keys(next).length > 0) {
+      setFieldErrs(next);
       return;
     }
 
+    setFieldErrs({});
     setIsSubmitting(true);
     try {
       const { error } = await authClient.signIn.email({
-        email: email.trim(),
+        email: rawEmail,
         password: password.trim(),
         rememberMe: true,
       });
@@ -75,7 +95,6 @@ export default function LoginScreen() {
         duration: 2200,
       });
 
-      // Let the toast mount before navigation (full-screen change can hide it).
       setTimeout(() => {
         router.replace("/(tabs)");
       }, 400);
@@ -91,40 +110,49 @@ export default function LoginScreen() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [email, password, toast]);
+  }, [toast]);
 
   return (
     <KeyboardAvoidingWrapper
       keyboardDismissMode="interactive"
       contentContainerStyle={{
-        justifyContent: "center",
+        justifyContent: "flex-start",
         paddingHorizontal: 24,
-        paddingVertical: 24,
+        paddingTop: 12,
+        paddingBottom: 40,
       }}
     >
-      <View>
-        <View>
-          <Text className="text-foreground text-4xl font-bold text-center leading-tight">
-            Welcome Back,
+      <View className="gap-4">
+        <View className="items-center gap-2">
+          <ReceiptRival />
+          <Text className="text-center text-[11px] font-bold uppercase tracking-[0.22em] text-purple-300/90">
+            Sign in
           </Text>
-          <Text className="text-foreground text-4xl font-bold text-center leading-tight">
-            Rival.
+          <Text className="text-center text-4xl font-bold leading-tight text-foreground">
+            Welcome back
           </Text>
-          <Text className="text-xl text-muted-foreground text-center">
-            Who&apos;s paying tonight?
+          <Text className="text-center text-lg leading-6 text-muted-foreground">
+            Pick up where you left off—settle up and see who&apos;s paying
+            tonight.
           </Text>
         </View>
 
-        <Card variant="transparent">
-          <Card.Header className="px-1 pb-1 pt-1">
-            <Card.Title className="text-2xl">Sign in</Card.Title>
+        <Card
+          variant="transparent"
+          className="rounded-2xl border border-border/80"
+        >
+          <Card.Header className="px-1 pb-0.5 pt-0">
+            <Card.Title className="text-2xl">Your credentials</Card.Title>
             <Card.Description>
-              Enter your email and password to continue.
+              Email and password you used when you joined.
             </Card.Description>
           </Card.Header>
 
-          <Card.Body className="gap-4 px-1 py-5">
-            <TextField isRequired isInvalid={emailEmpty || emailBadFormat}>
+          <Card.Body className="gap-4 px-1 py-3">
+            <TextField
+              isRequired
+              isInvalid={Boolean(fieldErrs.email)}
+            >
               <Label>
                 <Label.Text>Email</Label.Text>
               </Label>
@@ -137,63 +165,31 @@ export default function LoginScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
-                  value={email}
-                  onChangeText={setEmail}
+                  defaultValue=""
+                  onChangeText={(t) => {
+                    formRef.current.email = t;
+                    clearEmailFieldError();
+                  }}
                 />
               </InputGroup>
-              {(emailEmpty || emailBadFormat) && (
-                <FieldError>
-                  {emailEmpty
-                    ? "Email is required."
-                    : "Enter a valid email address."}
-                </FieldError>
-              )}
+              {fieldErrs.email ? (
+                <FieldError>{fieldErrs.email}</FieldError>
+              ) : null}
             </TextField>
 
-            <TextField isRequired isInvalid={passwordShort}>
-              <Label>
-                <Label.Text>Password</Label.Text>
-              </Label>
-              <InputGroup>
-                <InputGroup.Prefix isDecorative>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color={iconMuted}
-                  />
-                </InputGroup.Prefix>
-                <InputGroup.Input
-                  placeholder="••••••••"
-                  secureTextEntry={!showPassword}
-                  autoComplete="password"
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                <InputGroup.Suffix>
-                  <Pressable
-                    hitSlop={8}
-                    onPress={() => setShowPassword((v) => !v)}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
-                      size={20}
-                      color={iconMuted}
-                    />
-                  </Pressable>
-                </InputGroup.Suffix>
-              </InputGroup>
-              <Description>Use at least 6 characters.</Description>
-              {passwordShort && (
-                <FieldError>Password must be at least 6 characters.</FieldError>
-              )}
-            </TextField>
+            <PasswordToggleInput
+              label="Password"
+              iconMuted={iconMuted}
+              autoComplete="password"
+              description="Use at least 6 characters."
+              errorText={fieldErrs.password ?? null}
+              onValueChange={clearPasswordFieldError}
+              formRef={formRef}
+              fieldKey="password"
+            />
           </Card.Body>
 
-          <Card.Footer className="gap-4 px-1 pb-2 pt-2">
+          <Card.Footer className="gap-4 px-1 pb-2 pt-1">
             <Button
               className="w-full"
               onPress={() => void onSubmit()}
@@ -204,6 +200,7 @@ export default function LoginScreen() {
               </Button.Label>
             </Button>
 
+            {/* OAuth — re-enable when Apple / Google are wired up
             <View className="flex-row items-center gap-3">
               <View className="h-px flex-1 bg-border-secondary" />
               <Text className="text-foreground text-lg">or</Text>
@@ -216,7 +213,13 @@ export default function LoginScreen() {
                   variant="outline"
                   className="flex-1"
                   feedbackVariant="scale-highlight"
-                  onPress={() => console.log("apple")}
+                  onPress={() => {
+                    console.log("apple");
+                    toast.show({
+                      variant: "warning",
+                      label: "Apple sign in Coming soon",
+                    });
+                  }}
                 >
                   <Ionicons name="logo-apple" size={20} color={iconMuted} />
                   <Button.Label>Apple</Button.Label>
@@ -226,21 +229,28 @@ export default function LoginScreen() {
                 variant="outline"
                 className="flex-1"
                 feedbackVariant="scale-highlight"
-                onPress={() => console.log("google")}
+                onPress={() => {
+                  console.log("google");
+                  toast.show({
+                    variant: "warning",
+                    label: "Google sign in Coming soon",
+                  });
+                }}
               >
                 <Ionicons name="logo-google" size={20} color={iconMuted} />
                 <Button.Label>Google</Button.Label>
               </Button>
             </View>
+            */}
           </Card.Footer>
         </Card>
 
-        <View className="flex-row justify-center flex-wrap gap-1">
-          <Text className="text-accent-foreground text-lg">New here?</Text>
+        <View className="flex-row flex-wrap justify-center gap-1 pb-4">
+          <Text className="text-lg text-foreground">New here?</Text>
           <Link href="/signup" asChild>
             <Pressable hitSlop={8}>
-              <Text className="text-purple-300 text-lg font-semibold">
-                Join the rivalry
+              <Text className="text-lg font-semibold text-purple-300">
+                Create an account
               </Text>
             </Pressable>
           </Link>

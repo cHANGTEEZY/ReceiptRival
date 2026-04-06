@@ -3,6 +3,8 @@ import React from "react";
 import SafeAreaWrapper from "../../components/SafeAreaWrapper";
 import Header from "../../components/Header";
 import { authClient } from "../../lib/auth-client";
+import { Button } from "heroui-native";
+import { Ionicons } from "@expo/vector-icons";
 
 const profile = () => {
   const { data } = authClient.useSession();
@@ -28,6 +30,10 @@ const profile = () => {
             {data?.user?.email}
           </Text>
         </View>
+        <Button variant="danger" onPress={() => authClient.signOut()}>
+          <Button.Label>Sign out</Button.Label>
+          <Ionicons name="log-out-outline" size={24} color="#ffffff" />
+        </Button>
       </View>
     </SafeAreaWrapper>
   );

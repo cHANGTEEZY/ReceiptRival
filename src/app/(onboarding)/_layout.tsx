@@ -1,16 +1,19 @@
-import React, { useLayoutEffect, useRef } from "react";
-import { ActivityIndicator, View } from "react-native";
+import React, { useEffect, useLayoutEffect, useRef } from "react";
+import { ActivityIndicator, BackHandler, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { authClient } from "../../lib/auth-client";
-import { store } from "../../lib/key-store";
+import { ONBOARDING } from "./onboarding-theme";
 
 export default function OnboardingLayout() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
-  const isOnboardingComplete = store.getString("isOnboardingComplete");
   const didRedirect = useRef(false);
 
-  //run after the component is mounted
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => true);
+    return () => sub.remove();
+  }, []);
+
   useLayoutEffect(() => {
     if (isPending || didRedirect.current) return;
 
@@ -20,33 +23,50 @@ export default function OnboardingLayout() {
       return;
     }
 
-    if (isOnboardingComplete) {
-      didRedirect.current = true;
-      router.replace("/(auth)/login");
-    }
-  }, [isPending, isOnboardingComplete, session, router]);
+  }, [isPending, session, router]);
 
   if (isPending) {
     return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: ONBOARDING.bg,
+        }}
+      >
+        <ActivityIndicator color={ONBOARDING.purple} />
       </View>
     );
   }
 
-  if (isOnboardingComplete || session?.user) {
+  if (session?.user) {
     return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: ONBOARDING.bg,
+        }}
+      >
+        <ActivityIndicator color={ONBOARDING.purple} />
       </View>
     );
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="OnboardingScan" options={{ headerShown: false }} />
-      <Stack.Screen name="OnboardingAssign" options={{ headerShown: false }} />
-      <Stack.Screen name="OnboardingSettle" options={{ headerShown: false }} />
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        gestureEnabled: false,
+        fullScreenGestureEnabled: false,
+        contentStyle: { backgroundColor: ONBOARDING.bg },
+      }}
+    >
+      <Stack.Screen name="OnboardingScan" />
+      <Stack.Screen name="OnboardingAssign" />
+      <Stack.Screen name="OnboardingSettle" />
     </Stack>
   );
 }

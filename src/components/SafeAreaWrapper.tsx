@@ -6,7 +6,9 @@ import {
   ScrollView,
   View,
   type ScrollViewProps,
+  type StyleProp,
   type ViewProps,
+  type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -15,14 +17,17 @@ export type SafeAreaEdge = "top" | "right" | "bottom" | "left";
 type SafeAreaWrapperProps = {
   children: React.ReactNode;
   edges?: SafeAreaEdge[];
+  /** Solid screen background (skips theme `bg-background`; use for fixed palettes e.g. onboarding). */
+  backgroundColor?: string;
 } & Pick<ViewProps, "className">;
 
 type KeyboardAvoidingWrapperProps = SafeAreaWrapperProps & {
   /** iOS only; use when a visible header sits above this screen (safe area is already applied). */
   keyboardVerticalOffset?: number;
+  /** Padding / layout for scroll content. */
+  contentContainerStyle?: StyleProp<ViewStyle>;
 } & Pick<
     ScrollViewProps,
-    | "contentContainerStyle"
     | "keyboardShouldPersistTaps"
     | "showsVerticalScrollIndicator"
     | "keyboardDismissMode"
@@ -34,6 +39,7 @@ export default function SafeAreaWrapper({
   children,
   edges = ALL_EDGES,
   className,
+  backgroundColor,
 }: SafeAreaWrapperProps) {
   const insets = useSafeAreaInsets();
 
@@ -45,7 +51,12 @@ export default function SafeAreaWrapper({
   };
 
   return (
-    <View className={`flex-1 bg-background ${className ?? ""}`}>
+    <View
+      className={
+        backgroundColor ? "flex-1" : `flex-1 bg-background ${className ?? ""}`
+      }
+      style={backgroundColor ? { flex: 1, backgroundColor } : undefined}
+    >
       <View className="flex-1" style={paddingStyle}>
         {children}
       </View>
@@ -91,6 +102,7 @@ export function KeyboardAvoidingWrapper({
         style={{ flex: 1 }}
       >
         <ScrollView
+          style={{ flex: 1 }}
           scrollEnabled={keyboardOpen}
           keyboardShouldPersistTaps={keyboardShouldPersistTaps}
           showsVerticalScrollIndicator={showsVerticalScrollIndicator}
