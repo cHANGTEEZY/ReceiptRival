@@ -1,14 +1,14 @@
 import { StyleSheet, Text, View } from "react-native";
 import React from "react";
 
-const settings = () => {
+const splits = () => {
   return (
     <View>
-      <Text>settings</Text>
+      <Text>splits</Text>
     </View>
   );
 };
 
-export default settings;
+export default splits;
 
 const styles = StyleSheet.create({});

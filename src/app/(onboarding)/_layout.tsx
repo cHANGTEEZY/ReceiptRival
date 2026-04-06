@@ -1,21 +1,45 @@
-import React from "react";
+import React, { useLayoutEffect, useRef } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { authClient } from "../../lib/auth-client";
 import { store } from "../../lib/key-store";
 
-const OnboaringLayout = () => {
-  const { data: session } = authClient.useSession();
-
+export default function OnboardingLayout() {
   const router = useRouter();
-
+  const { data: session, isPending } = authClient.useSession();
   const isOnboardingComplete = store.getString("isOnboardingComplete");
+  const didRedirect = useRef(false);
 
-  if (isOnboardingComplete) {
-    return router.replace("/(auth)");
+  //run after the component is mounted
+  useLayoutEffect(() => {
+    if (isPending || didRedirect.current) return;
+
+    if (session?.user) {
+      didRedirect.current = true;
+      router.replace("/(tabs)");
+      return;
+    }
+
+    if (isOnboardingComplete) {
+      didRedirect.current = true;
+      router.replace("/(auth)/login");
+    }
+  }, [isPending, isOnboardingComplete, session, router]);
+
+  if (isPending) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator />
+      </View>
+    );
   }
 
-  if (session?.session.token) {
-    return router.replace("/(tabs)");
+  if (isOnboardingComplete || session?.user) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator />
+      </View>
+    );
   }
 
   return (
@@ -25,6 +49,4 @@ const OnboaringLayout = () => {
       <Stack.Screen name="OnboardingSettle" options={{ headerShown: false }} />
     </Stack>
   );
-};
-
-export default OnboaringLayout;
+}

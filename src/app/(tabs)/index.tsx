@@ -10,7 +10,8 @@ export default function HomeScreen() {
     isPending: sessionPending,
     error: sessionError,
   } = authClient.useSession();
-  const convexUser = useQuery(api.auth.getCurrentUser);
+
+  console.log("User session data is", JSON.stringify(session, null, 2));
 
   if (sessionPending) {
     return (
@@ -38,10 +39,7 @@ export default function HomeScreen() {
   const { user, session: sess } = session;
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="gap-4 p-6"
-    >
+    <ScrollView className="flex-1 bg-background">
       <Text className="text-foreground text-2xl font-bold">Home</Text>
 
       <View className="gap-1 rounded-xl border border-border p-4">
@@ -62,23 +60,6 @@ export default function HomeScreen() {
             session.id: {sess.id}
           </Text>
         ) : null}
-      </View>
-
-      <View className="gap-1 rounded-xl border border-border p-4">
-        <Text className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-          Convex getCurrentUser
-        </Text>
-        {convexUser === undefined ? (
-          <Text className="text-muted-foreground text-sm">Loading…</Text>
-        ) : convexUser === null ? (
-          <Text className="text-muted-foreground text-sm">
-            No Convex user (not linked yet)
-          </Text>
-        ) : (
-          <Text className="text-foreground font-mono text-xs">
-            {JSON.stringify(convexUser, null, 2)}
-          </Text>
-        )}
       </View>
     </ScrollView>
   );
