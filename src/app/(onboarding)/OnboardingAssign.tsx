@@ -6,13 +6,14 @@ import { Button } from "heroui-native";
 import SafeAreaWrapper from "../../components/SafeAreaWrapper";
 import ReceiptRival from "../../components/ReceiptRival";
 import { images } from "../../assets/images";
+import { ONBOARDING } from "./onboarding-theme";
 
 const OnboardingAssign = () => {
   return (
-    <SafeAreaWrapper>
+    <SafeAreaWrapper backgroundColor={ONBOARDING.bg}>
       <View style={styles.screen}>
         <View style={styles.header}>
-          <ReceiptRival />
+          <ReceiptRival brandColor={ONBOARDING.purple} />
         </View>
 
         <View style={styles.imageSection}>
@@ -24,16 +25,12 @@ const OnboardingAssign = () => {
         </View>
 
         <View style={styles.footer}>
-          <View className="gap-1">
-            <Text className="text-foreground text-5xl text-center">
-              Know who{" "}
-            </Text>
-            <Text className="italic text-5xl text-center text-purple-300">
-              owes what.
-            </Text>
+          <View style={styles.titleBlock}>
+            <Text style={styles.titleMain}>Know who</Text>
+            <Text style={[styles.titleMain, styles.titleAccent]}>owes what.</Text>
           </View>
 
-          <Text className="text-accent-foreground text-2xl text-center px-1 leading-8">
+          <Text style={styles.subtitle}>
             Visually assign items to friends in seconds.
           </Text>
 
@@ -43,7 +40,7 @@ const OnboardingAssign = () => {
             onPress={() => router.push("/OnboardingScan")}
           >
             <Button.Label className="text-xl font-semibold">Next</Button.Label>
-            <Ionicons name="arrow-forward" size={24} color="#ffffff" />
+            <Ionicons name="arrow-forward" size={24} color={ONBOARDING.text} />
           </Button>
         </View>
       </View>
@@ -59,6 +56,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     paddingHorizontal: H_PADDING,
+    backgroundColor: ONBOARDING.bg,
   },
   header: {
     flexShrink: 0,
@@ -85,5 +83,26 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
     gap: 20,
+  },
+  titleBlock: {
+    gap: 4,
+  },
+  titleMain: {
+    fontSize: 48,
+    lineHeight: 52,
+    textAlign: "center",
+    color: ONBOARDING.text,
+    fontWeight: "700",
+  },
+  titleAccent: {
+    color: ONBOARDING.purple,
+    fontStyle: "italic",
+  },
+  subtitle: {
+    fontSize: 22,
+    lineHeight: 30,
+    textAlign: "center",
+    paddingHorizontal: 4,
+    color: ONBOARDING.textMuted,
   },
 });

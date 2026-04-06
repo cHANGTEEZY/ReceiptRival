@@ -8,13 +8,19 @@
     },
     "name": "ReceiptRival",
     "slug": "ReceiptRival",
+    "icon": "./src/assets/images/RR.png",
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      "expo-secure-store"
     ],
     "android": {
-      "package": "com.changteezy.ReceiptRival"
+      "package": "com.changteezy.ReceiptRival",
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/RR.png",
+        "backgroundColor": "#1a0a2e"
+      }
     },
     "ios": {
       "bundleIdentifier": "com.changteezy.ReceiptRival",
