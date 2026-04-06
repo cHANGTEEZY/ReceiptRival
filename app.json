@@ -11,7 +11,8 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      "expo-secure-store"
     ],
     "android": {
       "package": "com.changteezy.ReceiptRival"

@@ -62,6 +62,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - ExpoSecureStore (15.0.8):
+    - ExpoModulesCore
   - ExpoSplashScreen (31.0.13):
     - ExpoModulesCore
   - FBLazyVector (0.81.5)
@@ -2086,6 +2088,7 @@ DEPENDENCIES:
   - "ExpoKeepAwake (from `../node_modules/.pnpm/expo-keep-awake@15.0.8_expo@54.0.33_react@19.1.0/node_modules/expo-keep-awake/ios`)"
   - "ExpoLinking (from `../node_modules/.pnpm/expo-linking@8.0.11_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-linking/ios`)"
   - "ExpoModulesCore (from `../node_modules/.pnpm/expo-modules-core@3.0.29_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-modules-core`)"
+  - "ExpoSecureStore (from `../node_modules/.pnpm/expo-secure-store@15.0.8_expo@54.0.33/node_modules/expo-secure-store/ios`)"
   - "ExpoSplashScreen (from `../node_modules/.pnpm/expo-splash-screen@31.0.13_expo@54.0.33/node_modules/expo-splash-screen/ios`)"
   - "FBLazyVector (from `../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native/Libraries/FBLazyVector`)"
   - "hermes-engine (from `../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)"
@@ -2187,6 +2190,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/.pnpm/expo-linking@8.0.11_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-linking/ios"
   ExpoModulesCore:
     :path: "../node_modules/.pnpm/expo-modules-core@3.0.29_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-modules-core"
+  ExpoSecureStore:
+    :path: "../node_modules/.pnpm/expo-secure-store@15.0.8_expo@54.0.33/node_modules/expo-secure-store/ios"
   ExpoSplashScreen:
     :path: "../node_modules/.pnpm/expo-splash-screen@31.0.13_expo@54.0.33/node_modules/expo-splash-screen/ios"
   FBLazyVector:
@@ -2351,6 +2356,7 @@ SPEC CHECKSUMS:
   ExpoKeepAwake: 44bf6715bc1d2ddb17afe19d927cd039cda123f0
   ExpoLinking: ebf543fd411d56375cb4eee07f6ab4e31c7ad959
   ExpoModulesCore: 77496909fd3c800f97f7f2007dd26aeac4bb3798
+  ExpoSecureStore: decd2943fa19fa6f02c5ef3689f9ba5012ad6a6d
   ExpoSplashScreen: 72fbc6dd9d6404dd9d0725a56c9ac1383bc0b14f
   FBLazyVector: e95a291ad2dadb88e42b06e0c5fb8262de53ec12
   hermes-engine: 9f4dfe93326146a1c99eb535b1cb0b857a3cd172
