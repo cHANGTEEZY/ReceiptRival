@@ -1,15 +1,21 @@
 import React from "react";
-import { Stack } from "expo-router";
-import { HeroUINativeProvider } from "heroui-native/provider";
+import { Stack, useRouter } from "expo-router";
+import { authClient } from "../../lib/auth-client";
 
 const AuthLayout = () => {
+  const { data: session } = authClient.useSession();
+
+  const router = useRouter();
+
+  if (session?.session.token) {
+    return router.replace("/(tabs)");
+  }
+
   return (
-    <HeroUINativeProvider>
-      <Stack>
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="signup" options={{ headerShown: false }} />
-      </Stack>
-    </HeroUINativeProvider>
+    <Stack>
+      <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="signup" options={{ headerShown: false }} />
+    </Stack>
   );
 };
 

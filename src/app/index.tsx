@@ -6,9 +6,9 @@ export default function Index() {
   const isLoggedIn = false;
   const isOnboardingComplete = store.getString("isOnboardingComplete");
 
-  // if (!isLoggedIn && !isOnboardingComplete) {
-  //   return <Redirect href="/(onboarding)/OnboardingAssign" />;
-  // }
+  if (!isLoggedIn && !isOnboardingComplete) {
+    return <Redirect href="/(onboarding)/OnboardingAssign" />;
+  }
 
   return <Redirect href="/(auth)/login" />;
 }

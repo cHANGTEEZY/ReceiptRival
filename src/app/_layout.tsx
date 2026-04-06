@@ -6,20 +6,17 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { HeroUINativeProvider } from "heroui-native";
 import "../global.css";
 import useLoadFonts from "../hooks/useFonts";
-import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
-import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import { authClient } from "../lib/auth-client";
+import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 
-const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
-  unsavedChangesWarning: false,
-});
-
-const secureStorage = {
-  getItem: SecureStore.getItemAsync,
-  setItem: SecureStore.setItemAsync,
-  removeItem: SecureStore.deleteItemAsync,
-};
+const convex = new ConvexReactClient(
+  process.env.EXPO_PUBLIC_CONVEX_URL as string,
+  {
+    expectAuth: true,
+    unsavedChangesWarning: false,
+  },
+);
 
 export default function Layout() {
   const { fontsLoaded, onLayoutRootView } = useLoadFonts();
@@ -29,10 +26,7 @@ export default function Layout() {
   }
 
   return (
-    <ConvexAuthProvider
-      client={convex}
-      storage={Platform.OS === "web" ? undefined : secureStorage}
-    >
+    <ConvexBetterAuthProvider client={convex} authClient={authClient}>
       <SafeAreaProvider>
         <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
           <HeroUINativeProvider>
@@ -43,6 +37,6 @@ export default function Layout() {
           </HeroUINativeProvider>
         </GestureHandlerRootView>
       </SafeAreaProvider>
-    </ConvexAuthProvider>
+    </ConvexBetterAuthProvider>
   );
 }
