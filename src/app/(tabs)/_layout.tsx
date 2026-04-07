@@ -1,14 +1,17 @@
 import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
+import { Redirect } from "expo-router";
+import AuthSessionSplash from "../../components/AuthSessionSplash";
 import { authClient } from "../../lib/auth-client";
-import { useRouter } from "expo-router";
 
 export default function TabLayout() {
   const { data: session, isPending } = authClient.useSession();
 
-  const router = useRouter();
+  if (isPending) {
+    return <AuthSessionSplash />;
+  }
 
-  if (!session?.session.token && !isPending) {
-    return router.replace("/(auth)/login");
+  if (!session?.user) {
+    return <Redirect href="/(auth)/login" />;
   }
 
   return (

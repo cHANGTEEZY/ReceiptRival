@@ -1,6 +1,9 @@
 PODS:
   - EXConstants (18.0.13):
     - ExpoModulesCore
+  - EXImageLoader (6.0.0):
+    - ExpoModulesCore
+    - React-Core
   - Expo (54.0.33):
     - ExpoModulesCore
     - hermes-engine
@@ -28,6 +31,12 @@ PODS:
     - Yoga
   - ExpoAsset (12.0.12):
     - ExpoModulesCore
+  - ExpoBlur (15.0.8):
+    - ExpoModulesCore
+  - ExpoCamera (17.0.10):
+    - ExpoModulesCore
+    - ZXingObjC/OneD
+    - ZXingObjC/PDF417
   - ExpoFileSystem (19.0.21):
     - ExpoModulesCore
   - ExpoFont (14.0.11):
@@ -35,7 +44,11 @@ PODS:
   - ExpoHead (6.0.23):
     - ExpoModulesCore
     - RNScreens
+  - ExpoImagePicker (17.0.10):
+    - ExpoModulesCore
   - ExpoKeepAwake (15.0.8):
+    - ExpoModulesCore
+  - ExpoLinearGradient (15.0.8):
     - ExpoModulesCore
   - ExpoLinking (8.0.11):
     - ExpoModulesCore
@@ -2079,15 +2092,25 @@ PODS:
     - ReactNativeDependencies
     - Yoga
   - Yoga (0.0.0)
+  - ZXingObjC/Core (3.6.9)
+  - ZXingObjC/OneD (3.6.9):
+    - ZXingObjC/Core
+  - ZXingObjC/PDF417 (3.6.9):
+    - ZXingObjC/Core
 
 DEPENDENCIES:
   - "EXConstants (from `../node_modules/.pnpm/expo-constants@18.0.13_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0_/node_modules/expo-constants/ios`)"
+  - "EXImageLoader (from `../node_modules/.pnpm/expo-image-loader@6.0.0_expo@54.0.33/node_modules/expo-image-loader/ios`)"
   - "Expo (from `../node_modules/.pnpm/expo@54.0.33_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_565b6db172422c96ef98beeabc19b506/node_modules/expo`)"
   - "ExpoAsset (from `../node_modules/.pnpm/expo-asset@12.0.12_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-asset/ios`)"
+  - "ExpoBlur (from `../node_modules/.pnpm/expo-blur@15.0.8_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-blur/ios`)"
+  - "ExpoCamera (from `../node_modules/.pnpm/expo-camera@17.0.10_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-camera/ios`)"
   - "ExpoFileSystem (from `../node_modules/.pnpm/expo-file-system@19.0.21_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0_/node_modules/expo-file-system/ios`)"
   - "ExpoFont (from `../node_modules/.pnpm/expo-font@14.0.11_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-font/ios`)"
   - "ExpoHead (from `../node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_d6466a3906dafb78c5809dfd98f1b1a3/node_modules/expo-router/ios`)"
+  - "ExpoImagePicker (from `../node_modules/.pnpm/expo-image-picker@17.0.10_expo@54.0.33/node_modules/expo-image-picker/ios`)"
   - "ExpoKeepAwake (from `../node_modules/.pnpm/expo-keep-awake@15.0.8_expo@54.0.33_react@19.1.0/node_modules/expo-keep-awake/ios`)"
+  - "ExpoLinearGradient (from `../node_modules/.pnpm/expo-linear-gradient@15.0.8_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+_cc4c56da34bc47cbec1c87080c13d2e2/node_modules/expo-linear-gradient/ios`)"
   - "ExpoLinking (from `../node_modules/.pnpm/expo-linking@8.0.11_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-linking/ios`)"
   - "ExpoModulesCore (from `../node_modules/.pnpm/expo-modules-core@3.0.29_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-modules-core`)"
   - "ExpoNetwork (from `../node_modules/.pnpm/expo-network@8.0.8_expo@54.0.33_react@19.1.0/node_modules/expo-network/ios`)"
@@ -2173,22 +2196,33 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - MMKVCore
+    - ZXingObjC
 
 EXTERNAL SOURCES:
   EXConstants:
     :path: "../node_modules/.pnpm/expo-constants@18.0.13_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0_/node_modules/expo-constants/ios"
+  EXImageLoader:
+    :path: "../node_modules/.pnpm/expo-image-loader@6.0.0_expo@54.0.33/node_modules/expo-image-loader/ios"
   Expo:
     :path: "../node_modules/.pnpm/expo@54.0.33_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_565b6db172422c96ef98beeabc19b506/node_modules/expo"
   ExpoAsset:
     :path: "../node_modules/.pnpm/expo-asset@12.0.12_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-asset/ios"
+  ExpoBlur:
+    :path: "../node_modules/.pnpm/expo-blur@15.0.8_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-blur/ios"
+  ExpoCamera:
+    :path: "../node_modules/.pnpm/expo-camera@17.0.10_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-camera/ios"
   ExpoFileSystem:
     :path: "../node_modules/.pnpm/expo-file-system@19.0.21_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0_/node_modules/expo-file-system/ios"
   ExpoFont:
     :path: "../node_modules/.pnpm/expo-font@14.0.11_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-font/ios"
   ExpoHead:
     :path: "../node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_d6466a3906dafb78c5809dfd98f1b1a3/node_modules/expo-router/ios"
+  ExpoImagePicker:
+    :path: "../node_modules/.pnpm/expo-image-picker@17.0.10_expo@54.0.33/node_modules/expo-image-picker/ios"
   ExpoKeepAwake:
     :path: "../node_modules/.pnpm/expo-keep-awake@15.0.8_expo@54.0.33_react@19.1.0/node_modules/expo-keep-awake/ios"
+  ExpoLinearGradient:
+    :path: "../node_modules/.pnpm/expo-linear-gradient@15.0.8_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+_cc4c56da34bc47cbec1c87080c13d2e2/node_modules/expo-linear-gradient/ios"
   ExpoLinking:
     :path: "../node_modules/.pnpm/expo-linking@8.0.11_expo@54.0.33_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-linking/ios"
   ExpoModulesCore:
@@ -2353,12 +2387,17 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   EXConstants: 3feb66fd1d94202fc1f0946d74e029d8b224b60e
+  EXImageLoader: e501c001bc40b8326605e82e6e80363c80fe06b5
   Expo: 7f5e64b5d18096dcec86814764b526b0cb97811c
   ExpoAsset: d999f3bbd998a750f3b74cb913229848901b926b
+  ExpoBlur: 688c53d5d26575cbb6c72e7fbd4caef8d8cfadf6
+  ExpoCamera: 44705f35b32741582d00c69187c8ee59669ed46e
   ExpoFileSystem: aefcd337b94b874f88752ebefc52813b84992fad
   ExpoFont: c625dbd97ed57e9089b172b2a7bb99003d074664
   ExpoHead: 3f6ed6cbda48f13bcaddae98f8e5dc525dcfb34f
+  ExpoImagePicker: 115fada5d2e90bf900dea64151953ca39f67b47b
   ExpoKeepAwake: 44bf6715bc1d2ddb17afe19d927cd039cda123f0
+  ExpoLinearGradient: 814a21fc4056c3cf606e4f19e31e47074c5b5a86
   ExpoLinking: ebf543fd411d56375cb4eee07f6ab4e31c7ad959
   ExpoModulesCore: 77496909fd3c800f97f7f2007dd26aeac4bb3798
   ExpoNetwork: 22549f045e63a81d00f1e7237ecab7af67704c1e
@@ -2440,6 +2479,7 @@ SPEC CHECKSUMS:
   RNSVG: 2825ee146e0f6a16221e852299943e4cceef4528
   RNWorklets: 4ed11719ad36a4cd847dfe5ff3e707d7b5494328
   Yoga: 5934998fbeaef7845dbf698f698518695ab4cd1a
+  ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
 PODFILE CHECKSUM: fc120a76149de888b5ceeccab906fcbb9c44727e
 

@@ -1,14 +1,17 @@
 import React from "react";
-import { Stack, useRouter } from "expo-router";
+import { Redirect, Stack } from "expo-router";
+import AuthSessionSplash from "../../components/AuthSessionSplash";
 import { authClient } from "../../lib/auth-client";
 
 const AuthLayout = () => {
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
 
-  const router = useRouter();
+  if (isPending) {
+    return <AuthSessionSplash />;
+  }
 
-  if (session?.session.token) {
-    return router.replace("/(tabs)");
+  if (session?.user) {
+    return <Redirect href="/(tabs)" />;
   }
 
   return (
