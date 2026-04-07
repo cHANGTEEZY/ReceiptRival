@@ -1,5 +1,8 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRef, useState } from "react";
+import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
+import { useAction } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import {
   ActivityIndicator,
   Image,
@@ -32,6 +35,27 @@ const W40 = "rgba(255,255,255,0.4)";
 const W12 = "rgba(255,255,255,0.12)";
 const W08 = "rgba(255,255,255,0.08)";
 
+// Raw base64 + mime are sent to Convex; `processOcr` forwards the file as multipart field `image`.
+
+function mimeFromImageUri(uri: string): string {
+  const path = uri.split("?")[0].split("#")[0].toLowerCase();
+  if (path.endsWith(".png")) return "image/png";
+  if (path.endsWith(".webp")) return "image/webp";
+  if (path.endsWith(".heic") || path.endsWith(".heif")) return "image/heic";
+  if (path.endsWith(".gif")) return "image/gif";
+  return "image/jpeg";
+}
+
+async function localImageUriToBase64Parts(uri: string): Promise<{
+  imageBase64: string;
+  mimeType: string;
+}> {
+  const imageBase64 = await readAsStringAsync(uri, {
+    encoding: EncodingType.Base64,
+  });
+  return { imageBase64, mimeType: mimeFromImageUri(uri) };
+}
+
 const ICON_STROKE = 1.5;
 
 function Icon({
@@ -60,6 +84,8 @@ export default function CameraScreen() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [flash, setFlash] = useState<"off" | "on">("off");
   const cameraRef = useRef<CameraView>(null);
+  const processOcr = useAction(api.ocr.processOcr);
+  const [ocrBusy, setOcrBusy] = useState(false);
 
   const { toast } = useToast();
 
@@ -150,8 +176,29 @@ export default function CameraScreen() {
 
   const retake = () => setCapturedImage(null);
 
-  const analyze = () => {
-    console.log("Analyzing image:", capturedImage);
+  const analyze = async () => {
+    if (!capturedImage || ocrBusy) return;
+    try {
+      setOcrBusy(true);
+      const { imageBase64, mimeType } =
+        await localImageUriToBase64Parts(capturedImage);
+      const result = await processOcr({ imageBase64, mimeType });
+      console.log("OCR result:", result);
+      toast.show({
+        label: "Receipt read",
+        description: "Check the console for raw OCR output for now.",
+      });
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : "Could not read receipt.";
+      toast.show({
+        label: "OCR failed",
+        description: message,
+        variant: "danger",
+      });
+    } finally {
+      setOcrBusy(false);
+    }
   };
 
   if (capturedImage) {
@@ -206,13 +253,17 @@ export default function CameraScreen() {
             </Pressable>
             <Pressable
               onPress={analyze}
+              disabled={ocrBusy}
               style={({ pressed }) => [
                 styles.btnSolid,
-                pressed && { opacity: 0.85 },
+                (pressed || ocrBusy) && { opacity: 0.85 },
+                ocrBusy && { opacity: 0.6 },
               ]}
             >
               <Icon icon={ScanEyeIcon} size={20} color={B} />
-              <Text style={styles.btnSolidText}>Read receipt</Text>
+              <Text style={styles.btnSolidText}>
+                {ocrBusy ? "Reading…" : "Read receipt"}
+              </Text>
             </Pressable>
           </View>
         </SafeAreaView>
