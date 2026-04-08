@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useAction } from "convex/react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useToast } from "heroui-native";
@@ -11,6 +11,11 @@ import { localImageUriToBase64Parts } from "../features/Camera/cameraImage";
 import PreviewView from "../features/Camera/PreviewView";
 import Permission from "../features/Camera/Permission";
 import PermissionLoading from "../features/Camera/PermissionLoading";
+import type { CaptureFabAction } from "../features/Camera/captureFab";
+import {
+  CameraRotated01Icon,
+  ReceiptTextIcon,
+} from "@hugeicons/core-free-icons";
 
 export default function CameraScreen() {
   const router = useRouter();
@@ -106,6 +111,29 @@ export default function CameraScreen() {
     );
   }
 
+  const captureFabActions = useMemo<CaptureFabAction[]>(
+    () => [
+      {
+        id: "flip-camera",
+        icon: CameraRotated01Icon,
+        label: "Flip camera",
+        onPress: () =>
+          setFacing((prev) => (prev === "back" ? "front" : "back")),
+      },
+      {
+        id: "custom",
+        icon: ReceiptTextIcon,
+        label: "Custom action",
+        onPress: () =>
+          toast.show({
+            label: "Custom action",
+            description: "Edit fabActions in camera.tsx to wire this button.",
+          }),
+      },
+    ],
+    [toast],
+  );
+
   return (
     <CaptureView
       cameraRef={cameraRef}
@@ -113,11 +141,9 @@ export default function CameraScreen() {
       flash={flash}
       onBack={() => router.back()}
       onToggleFlash={() => setFlash((prev) => (prev === "off" ? "on" : "off"))}
-      onToggleFacing={() =>
-        setFacing((prev) => (prev === "back" ? "front" : "back"))
-      }
       onTakePicture={takePicture}
       onPickFromGallery={handlePickImageFromGallery}
+      fabActions={captureFabActions}
     />
   );
 }

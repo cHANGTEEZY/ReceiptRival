@@ -1,4 +1,4 @@
-import React, { type ComponentProps } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -13,10 +13,18 @@ import HeaderRoot from "../../components/Header";
 import { MarketIndexRow } from "../../components/MarketIndexRow";
 import { Ionicons } from "@expo/vector-icons";
 import { DEADBEAT_LEADERBOARD, RECENT_ACTIVITIES } from "../../lib/data";
+import { getActivityCategoryIcon } from "../../lib/activity-category-icon";
 import ListRowCard from "../../components/ListRowCard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { cn } from "heroui-native";
+import { Button, cn } from "heroui-native";
 import { getDeadbeatStatus } from "../../lib/utils/get-deadbeat-status";
+import { FabGroup } from "../../components/FabGroup";
+import {
+  Add01Icon,
+  Cancel01Icon,
+  Camera01Icon,
+  FileSpreadsheetIcon,
+} from "@hugeicons/core-free-icons";
 
 const OWED_AMOUNT = 100_100;
 const OWE_AMOUNT = 100_100;
@@ -25,36 +33,6 @@ const OWE_NET_CHANGE = 890;
 
 const OWED_SERIES = [0.35, 0.42, 0.38, 0.5, 0.48, 0.62, 0.58, 0.78, 0.74, 0.92];
 const OWE_SERIES = [0.9, 0.82, 0.85, 0.72, 0.75, 0.6, 0.65, 0.52, 0.48, 0.4];
-
-type IoniconName = ComponentProps<typeof Ionicons>["name"];
-
-function getActivityCategoryIcon(category: string): IoniconName {
-  const key = category.trim().toLowerCase();
-  if (
-    key === "food" ||
-    key === "dinner" ||
-    key === "lunch" ||
-    key === "restaurant"
-  ) {
-    return "restaurant-outline";
-  }
-  if (key === "movie" || key === "movies" || key === "entertainment") {
-    return "film-outline";
-  }
-  if (key === "coffee" || key === "drinks" || key === "bar") {
-    return "cafe-outline";
-  }
-  if (key === "transport" || key === "travel" || key === "rideshare") {
-    return "car-outline";
-  }
-  if (key === "shopping" || key === "retail" || key === "groceries") {
-    return "bag-outline";
-  }
-  if (key === "gas" || key === "fuel") {
-    return "color-fill-outline";
-  }
-  return "receipt-outline";
-}
 
 function getInitials(name: string) {
   return name
@@ -67,6 +45,7 @@ function getInitials(name: string) {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [fabOpen, setFabOpen] = useState(false);
   const {
     data: session,
     isPending: sessionPending,
@@ -101,6 +80,24 @@ export default function HomeScreen() {
 
   const { user } = session;
   const firstName = user?.name?.trim()?.split(/\s+/)[0] ?? "there";
+
+  // const homeFabActions = useMemo(
+  //   () => [
+  //     {
+  //       id: "camera",
+  //       icon: Camera01Icon,
+  //       label: "Scan receipt",
+  //       onPress: () => router.push("/camera"),
+  //     },
+  //     {
+  //       id: "split",
+  //       icon: FileSpreadsheetIcon,
+  //       label: "Create split",
+  //       onPress: () => router.push("/(drawer)/SplitForm"),
+  //     },
+  //   ],
+  //   [router],
+  // );
 
   return (
     <View className="flex-1 bg-background">
@@ -212,10 +209,21 @@ export default function HomeScreen() {
             })}
           </View>
 
-          <View className="my-4 px-4">
+          <View className="my-4 flex-row items-center justify-between px-4">
             <Text className="text-foreground text-2xl font-bold">
-              Recent Activities
+              Recent Splits
             </Text>
+
+            <Button variant="ghost">
+              <Button.Label
+                className={`text-base ${
+                  colorScheme === "dark" ? "text-purple-300" : "text-purple-800"
+                }`}
+                onPress={() => router.push("/splits")}
+              >
+                View All
+              </Button.Label>
+            </Button>
           </View>
 
           <View className="gap-3 px-4 pb-4">
@@ -277,23 +285,19 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Open camera"
-        onPress={() => router.push("/camera")}
-        className="absolute z-50 h-14 w-14 items-center justify-center rounded-full bg-gray-600 active:opacity-90"
-        style={{
-          bottom: inset.bottom + 64,
-          right: 20,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.28,
-          shadowRadius: 8,
-          elevation: 10,
-        }}
-      >
-        <Ionicons name="camera" size={26} color="#ffffff" />
-      </Pressable>
+      {/* <FabGroup
+        open={fabOpen}
+        onOpenChange={setFabOpen}
+        iconClosed={Add01Icon}
+        iconOpen={Cancel01Icon}
+        actions={homeFabActions}
+        bottomInsetExtra={64}
+        trailingInset={20}
+        accessibilityLabelClosed="Add"
+        accessibilityLabelOpen="Close menu"
+        mainFabVariant="primary"
+        mainFabClassName="h-14 w-14 rounded-full shadow-lg"
+      /> */}
     </View>
   );
 }

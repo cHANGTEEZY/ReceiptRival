@@ -1,16 +1,20 @@
 import type { RefObject } from "react";
+import { useState } from "react";
 import { CameraView } from "expo-camera";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  Add01Icon,
   Album01Icon,
   ArrowLeft02Icon,
-  CameraRotated01Icon,
+  Cancel01Icon,
   FlashIcon,
   FlashOffIcon,
 } from "@hugeicons/core-free-icons";
+import { FabGroup } from "../../components/FabGroup";
 import { CameraIcon } from "./CameraIcon";
+import type { CaptureFabAction } from "./captureFab";
 import { B, W, W08, W12 } from "./constants";
 
 const CORNER = 26;
@@ -22,9 +26,9 @@ type Props = {
   flash: "off" | "on";
   onBack: () => void;
   onToggleFlash: () => void;
-  onToggleFacing: () => void;
   onTakePicture: () => void;
   onPickFromGallery: () => void;
+  fabActions: CaptureFabAction[];
 };
 
 export default function CaptureView({
@@ -33,10 +37,12 @@ export default function CaptureView({
   flash,
   onBack,
   onToggleFlash,
-  onToggleFacing,
   onTakePicture,
   onPickFromGallery,
+  fabActions,
 }: Props) {
+  const [fabOpen, setFabOpen] = useState(false);
+
   return (
     <View style={styles.container}>
       <CameraView
@@ -57,7 +63,17 @@ export default function CaptureView({
         pointerEvents="none"
       />
 
-      <SafeAreaView style={styles.cameraUI}>
+      <FabGroup
+        open={fabOpen}
+        onOpenChange={setFabOpen}
+        visible
+        iconClosed={Add01Icon}
+        iconOpen={Cancel01Icon}
+        actions={fabActions}
+        backdropColor="rgba(0,0,0,0.45)"
+      />
+
+      <SafeAreaView style={styles.cameraUI} pointerEvents="box-none">
         <View style={styles.topBar}>
           <Pressable
             onPress={onBack}
@@ -114,15 +130,7 @@ export default function CaptureView({
             <View style={styles.shutterDisc} />
           </Pressable>
 
-          <Pressable
-            onPress={onToggleFacing}
-            style={({ pressed }) => [
-              styles.sideRound,
-              pressed && { opacity: 0.65 },
-            ]}
-          >
-            <CameraIcon icon={CameraRotated01Icon} size={26} color={W} />
-          </Pressable>
+          <View style={styles.fabSpacer} />
         </View>
       </SafeAreaView>
     </View>
@@ -137,6 +145,7 @@ const styles = StyleSheet.create({
   cameraUI: {
     flex: 1,
     justifyContent: "space-between",
+    zIndex: 10,
   },
   fadeTop: {
     position: "absolute",
@@ -144,6 +153,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 120,
+    zIndex: 1,
   },
   fadeBottom: {
     position: "absolute",
@@ -151,6 +161,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
+    zIndex: 1,
   },
   topBar: {
     flexDirection: "row",
@@ -232,6 +243,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: W12,
+  },
+  fabSpacer: {
+    width: 50,
+    height: 50,
   },
   shutterRing: {
     width: 76,
