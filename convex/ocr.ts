@@ -31,6 +31,10 @@ export const processOcr = action({
             const blob = new Blob([ab], { type: args.mimeType });
             const form = new FormData();
             form.append("image", blob, fileNameForMime(args.mimeType));
+            form.append("format", "true")
+            form.append("documentType", "payment_receipt")
+            form.append("responsePorfile", "summary") //summary or full
+            form.append("strictMode", "false")
 
             const ocrApiKey = process.env.OCR_API_KEY;
             if (!ocrApiKey) {
@@ -55,7 +59,7 @@ export const processOcr = action({
             }
 
             const data = await response.json();
-            return data;
+            return data
         } catch (error) {
             throw new Error(
                 `Error processing OCR: ${error instanceof Error ? error.message : String(error)}`,
