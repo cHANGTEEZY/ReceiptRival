@@ -7,7 +7,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { KeyboardAvoidingWrapper } from "../../components/SafeAreaWrapper";
 import {
   Button,
   FieldError,
@@ -18,7 +17,13 @@ import {
 } from "heroui-native";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Add01Icon } from "@hugeicons/core-free-icons";
+import {
+  Add01Icon,
+  Mail01FreeIcons,
+  MailSend01FreeIcons,
+  Navigation03FreeIcons,
+  SaveIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   type SplitsFormSchema,
@@ -112,6 +117,29 @@ const SplitForm = () => {
                   <InputGroup.Input
                     placeholder="e.g. Dinner at Luna"
                     value={field.value}
+                    onChangeText={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                </InputGroup>
+                {fieldState.error ? (
+                  <FieldError>{fieldState.error.message}</FieldError>
+                ) : null}
+              </TextField>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="location"
+            render={({ field, fieldState }) => (
+              <TextField isInvalid={Boolean(fieldState.error)}>
+                <Label>
+                  <Label.Text>Location (optional)</Label.Text>
+                </Label>
+                <InputGroup>
+                  <InputGroup.Input
+                    placeholder="Place or address"
+                    value={field.value ?? ""}
                     onChangeText={field.onChange}
                     onBlur={field.onBlur}
                   />
@@ -360,29 +388,6 @@ const SplitForm = () => {
             </View>
           </View>
 
-          <Controller
-            control={form.control}
-            name="location"
-            render={({ field, fieldState }) => (
-              <TextField isInvalid={Boolean(fieldState.error)}>
-                <Label>
-                  <Label.Text>Location (optional)</Label.Text>
-                </Label>
-                <InputGroup>
-                  <InputGroup.Input
-                    placeholder="Place or address"
-                    value={field.value ?? ""}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                  />
-                </InputGroup>
-                {fieldState.error ? (
-                  <FieldError>{fieldState.error.message}</FieldError>
-                ) : null}
-              </TextField>
-            )}
-          />
-
           {form.formState.errors.root ? (
             <Text className="text-sm text-danger">
               {form.formState.errors.root.message}
@@ -392,9 +397,12 @@ const SplitForm = () => {
           <Button
             onPress={form.handleSubmit(onSubmit)}
             isDisabled={form.formState.isSubmitting}
-            className="mt-2 rounded-xl"
+            className="mt-2 rounded-xl "
           >
-            <Button.Label>Save split</Button.Label>
+            <Button.Label className="text-base font-bold">
+              Save split
+            </Button.Label>
+            <HugeiconsIcon icon={SaveIcon} size={20} color="#ffffff" />
           </Button>
         </View>
       </ScrollView>
