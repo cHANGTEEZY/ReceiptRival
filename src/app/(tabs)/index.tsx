@@ -1,11 +1,5 @@
-import React, { useMemo, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  Text,
-  useColorScheme,
-  View,
-} from "react-native";
+import React, { useState } from "react";
+import { ScrollView, Text, useColorScheme, View } from "react-native";
 import { useRouter } from "expo-router";
 import { authClient } from "../../lib/auth-client";
 import { formatSignedUsd, formatUsd } from "../../lib/format-currency";
@@ -18,13 +12,6 @@ import ListRowCard from "../../components/ListRowCard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, cn } from "heroui-native";
 import { getDeadbeatStatus } from "../../lib/utils/get-deadbeat-status";
-import { FabGroup } from "../../components/FabGroup";
-import {
-  Add01Icon,
-  Cancel01Icon,
-  Camera01Icon,
-  FileSpreadsheetIcon,
-} from "@hugeicons/core-free-icons";
 
 const OWED_AMOUNT = 100_100;
 const OWE_AMOUNT = 100_100;

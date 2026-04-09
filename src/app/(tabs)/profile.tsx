@@ -13,7 +13,10 @@ import {
   UserMultiple02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Avatar, Button, Separator } from "heroui-native";
+import { Avatar } from "heroui-native/avatar";
+import { Button } from "heroui-native/button";
+import { Separator } from "heroui-native/separator";
+
 import SafeAreaWrapper from "../../components/SafeAreaWrapper";
 import { authClient } from "../../lib/auth-client";
 import { ProfileRow } from "../../features/Profile/component/ProfileRow";
