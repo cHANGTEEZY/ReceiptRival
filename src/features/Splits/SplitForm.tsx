@@ -1,13 +1,18 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+} from "@react-native-community/datetimepicker";
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   Text,
+  useColorScheme,
   View,
 } from "react-native";
 import {
+  BottomSheet,
   Button,
   FieldError,
   InputGroup,
@@ -19,9 +24,8 @@ import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Add01Icon,
-  Mail01FreeIcons,
-  MailSend01FreeIcons,
-  Navigation03FreeIcons,
+  ArrowDown01Icon,
+  Calendar03Icon,
   SaveIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
@@ -31,6 +35,35 @@ import {
   splitsFormSchema,
 } from "./schema";
 
+function formatDateYmd(d: Date = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parseYmdToLocalDate(s: string | undefined): Date {
+  if (!s?.trim()) return new Date();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.trim());
+  if (!m) return new Date();
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const d = Number(m[3]);
+  return new Date(y, mo, d);
+}
+
+function formatDateDisplay(ymd: string | undefined) {
+  if (!ymd?.trim()) return "Select date";
+  const d = parseYmdToLocalDate(ymd);
+  if (Number.isNaN(d.getTime())) return "Select date";
+  return d.toLocaleDateString(undefined, {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 const defaultItem = (): SplitsFormSchema["items"][number] => ({
   itemName: "",
   itemPrice: 0,
@@ -38,6 +71,19 @@ const defaultItem = (): SplitsFormSchema["items"][number] => ({
 });
 
 const SplitForm = () => {
+  const colorScheme = useColorScheme();
+  const dateAffordanceColor = colorScheme === "dark" ? "#a3a3a3" : "#737373";
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [datePickerWorking, setDatePickerWorking] = useState(() =>
+    parseYmdToLocalDate(formatDateYmd()),
+  );
+  const dateFieldRef = useRef<{
+    commit: (ymd: string) => void;
+    blur: () => void;
+  } | null>(null);
+  const datePickerWorkingRef = useRef(datePickerWorking);
+  datePickerWorkingRef.current = datePickerWorking;
+
   const form = useForm<SplitsFormSchema>({
     resolver: zodResolver(splitsFormSchema),
     defaultValues: {
@@ -46,7 +92,7 @@ const SplitForm = () => {
       total: 0,
       tax: undefined,
       tip: undefined,
-      date: undefined,
+      date: formatDateYmd(),
       time: "",
       location: "",
       items: [defaultItem()],
@@ -61,6 +107,12 @@ const SplitForm = () => {
 
   const items = useWatch({ control: form.control, name: "items" });
   const category = useWatch({ control: form.control, name: "category" });
+  const watchedTotal = useWatch({ control: form.control, name: "total" });
+  const totalDisplay = (() => {
+    const n =
+      typeof watchedTotal === "number" ? watchedTotal : Number(watchedTotal);
+    return Number.isFinite(n) ? n.toFixed(2) : "0.00";
+  })();
 
   useEffect(() => {
     if (!items?.length) return;
@@ -74,6 +126,21 @@ const SplitForm = () => {
       shouldDirty: true,
     });
   }, [items, form]);
+
+  useEffect(() => {
+    if (Platform.OS !== "android" || !datePickerOpen) return;
+    void DateTimePickerAndroid.open({
+      value: datePickerWorkingRef.current,
+      mode: "date",
+      display: "default",
+      onChange: (event, date) => {
+        setDatePickerOpen(false);
+        if (event.type === "set" && date) {
+          dateFieldRef.current?.commit(formatDateYmd(date));
+        }
+      },
+    });
+  }, [datePickerOpen]);
 
   const categoryOption =
     category != null
@@ -126,6 +193,65 @@ const SplitForm = () => {
                 ) : null}
               </TextField>
             )}
+          />
+
+          <Controller
+            control={form.control}
+            name="date"
+            render={({ field, fieldState }) => {
+              dateFieldRef.current = {
+                commit: field.onChange,
+                blur: field.onBlur,
+              };
+              return (
+                <View className="gap-2">
+                  <Text className="text-sm font-medium text-foreground">
+                    Date
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Choose split date"
+                    onPress={() => {
+                      setDatePickerWorking(parseYmdToLocalDate(field.value));
+                      setDatePickerOpen(true);
+                    }}
+                    className="flex-row items-center gap-3 rounded-xl border border-border bg-background-secondary px-4 py-3 active:opacity-80"
+                  >
+                    <View className="h-10 w-10 items-center justify-center rounded-full bg-accent/15">
+                      <HugeiconsIcon
+                        icon={Calendar03Icon}
+                        size={22}
+                        color={dateAffordanceColor}
+                        strokeWidth={1.5}
+                      />
+                    </View>
+                    <View className="min-w-0 flex-1">
+                      <Text className="text-base font-medium text-foreground">
+                        {formatDateDisplay(field.value)}
+                      </Text>
+                      {field.value ? (
+                        <Text className="mt-0.5 text-xs text-foreground/50">
+                          {field.value}
+                        </Text>
+                      ) : (
+                        <Text className="mt-0.5 text-xs text-foreground/45">
+                          Tap to open calendar
+                        </Text>
+                      )}
+                    </View>
+                    <HugeiconsIcon
+                      icon={ArrowDown01Icon}
+                      size={20}
+                      color={dateAffordanceColor}
+                      strokeWidth={1.5}
+                    />
+                  </Pressable>
+                  {fieldState.error ? (
+                    <FieldError>{fieldState.error.message}</FieldError>
+                  ) : null}
+                </View>
+              );
+            }}
           />
 
           <Controller
@@ -216,7 +342,7 @@ const SplitForm = () => {
                 Line items
               </Text>
               <Text className="text-sm text-foreground/50">
-                Total: ${form.watch("total").toFixed(2)}
+                Total: ${totalDisplay}
               </Text>
             </View>
 
@@ -394,6 +520,45 @@ const SplitForm = () => {
             </Text>
           ) : null}
 
+          <View>
+            <Controller
+              control={form.control}
+              name={"total"}
+              render={({ field, fieldState }) => (
+                <TextField isInvalid={Boolean(fieldState.error)}>
+                  <Label>
+                    <Label.Text>Total amount</Label.Text>
+                  </Label>
+                  <InputGroup>
+                    <InputGroup.Prefix isDecorative>
+                      <Text className="text-foreground/60">$</Text>
+                    </InputGroup.Prefix>
+                    <InputGroup.Input
+                      placeholder="0.00"
+                      keyboardType="decimal-pad"
+                      value={
+                        field.value === undefined ||
+                        field.value === null ||
+                        Number(field.value) === 0
+                          ? ""
+                          : String(field.value)
+                      }
+                      onChangeText={(t) => {
+                        const cleaned = t.replace(/[^0-9.]/g, "");
+                        const n = parseFloat(cleaned);
+                        field.onChange(Number.isFinite(n) ? n : 0);
+                      }}
+                      onBlur={field.onBlur}
+                    />
+                  </InputGroup>
+                  {fieldState.error ? (
+                    <FieldError>{fieldState.error.message}</FieldError>
+                  ) : null}
+                </TextField>
+              )}
+            />
+          </View>
+
           <Button
             onPress={form.handleSubmit(onSubmit)}
             isDisabled={form.formState.isSubmitting}
@@ -406,6 +571,86 @@ const SplitForm = () => {
           </Button>
         </View>
       </ScrollView>
+
+      <BottomSheet
+        isOpen={datePickerOpen}
+        onOpenChange={(open) => {
+          setDatePickerOpen(open);
+          if (!open) void dateFieldRef.current?.blur();
+        }}
+      >
+        <BottomSheet.Portal>
+          <BottomSheet.Overlay />
+          <BottomSheet.Content
+            snapPoints={["52%"]}
+            enableDynamicSizing={false}
+            enableContentPanningGesture={false}
+            backgroundClassName="rounded-t-3xl"
+            handleIndicatorClassName="bg-foreground/20"
+          >
+            <BottomSheet.Title className="px-4 pb-1 pt-2 text-lg font-semibold text-foreground">
+              Split date
+            </BottomSheet.Title>
+            <BottomSheet.Description className="px-4 pb-3 text-sm text-foreground/60">
+              Choose when this expense happened.
+            </BottomSheet.Description>
+
+            {Platform.OS === "ios" ? (
+              <View
+                className="items-stretch px-3"
+                collapsable={false}
+                style={{ width: "100%", minHeight: 216 }}
+              >
+                <DateTimePicker
+                  value={datePickerWorking}
+                  mode="date"
+                  display="spinner"
+                  themeVariant={colorScheme === "dark" ? "dark" : "light"}
+                  style={{ width: "100%", height: 216 }}
+                  onChange={(_event, date) => {
+                    if (date) setDatePickerWorking(date);
+                  }}
+                />
+              </View>
+            ) : (
+              <Text className="px-4 pb-3 text-sm text-foreground/60">
+                Use the system date dialog to pick.
+              </Text>
+            )}
+
+            {Platform.OS === "ios" ? (
+              <View className="mt-2 flex-row justify-end gap-2 border-t border-border px-4 pb-6 pt-3">
+                <Button
+                  variant="ghost"
+                  onPress={() => setDatePickerOpen(false)}
+                >
+                  <Button.Label>Cancel</Button.Label>
+                </Button>
+                <Button
+                  variant="primary"
+                  onPress={() => {
+                    dateFieldRef.current?.commit(
+                      formatDateYmd(datePickerWorking),
+                    );
+                    setDatePickerOpen(false);
+                  }}
+                >
+                  <Button.Label>Done</Button.Label>
+                </Button>
+              </View>
+            ) : (
+              <View className="border-t border-border px-4 pb-6 pt-3">
+                <Button
+                  variant="tertiary"
+                  onPress={() => setDatePickerOpen(false)}
+                >
+                  <Button.Label>Close</Button.Label>
+                </Button>
+              </View>
+            )}
+          </BottomSheet.Content>
+        </BottomSheet.Portal>
+      </BottomSheet>
     </KeyboardAvoidingView>
   );
 };

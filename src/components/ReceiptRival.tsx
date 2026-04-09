@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, useColorScheme, View } from "react-native";
 import React from "react";
 
 type ReceiptRivalProps = {
@@ -11,7 +11,11 @@ export default function ReceiptRival({ brandColor }: ReceiptRivalProps) {
     <View>
       <Text
         style={[styles.text, brandColor ? { color: brandColor } : undefined]}
-        className={brandColor ? "text-3xl" : "text-3xl text-purple-300"}
+        className={
+          brandColor
+            ? "text-3xl"
+            : "text-3xl text-purple-700 dark:text-purple-300"
+        }
       >
         ReceiptRival
       </Text>

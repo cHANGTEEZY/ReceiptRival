@@ -36,7 +36,8 @@
             }
           }
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "android": {
       "package": "com.changteezy.ReceiptRival",
@@ -48,7 +49,6 @@
     "ios": {
       "bundleIdentifier": "com.changteezy.ReceiptRival",
       "appleTeamId": "XPZVK3T5VQ"
-      
     }
   }
 }

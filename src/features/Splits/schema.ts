@@ -16,7 +16,15 @@ export const splitsFormSchema = z.object({
   total: z.number().min(0),
   tax: z.number().optional(),
   tip: z.number().optional(),
-  date: z.date().optional(),
+  date: z
+    .string()
+    .optional()
+    .refine(
+      (val) =>
+        !val?.trim() ||
+        /^\d{4}-\d{2}-\d{2}$/.test(val.trim()),
+      { message: "Use YYYY-MM-DD" },
+    ),
   time: z.string().optional(),
   location: z.string().optional(),
   items: z

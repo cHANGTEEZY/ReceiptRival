@@ -5,7 +5,7 @@ import React, {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { Image, View } from "react-native";
+import { Image, useColorScheme, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "heroui-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -100,7 +100,7 @@ function HeaderRoot({ children }: PropsWithChildren) {
     pathname.endsWith("/profile") ||
     pathname.includes("/(tabs)/profile");
   const isNotificationsScreen =
-    pathname.includes("Notifictions") || pathname.endsWith("/Notifictions");
+    pathname.includes("Notifications") || pathname.endsWith("/Notifications");
 
   const showNotificationControl = showNotification && !isNotificationsScreen;
   const showProfileControl = showProfile;
@@ -109,6 +109,8 @@ function HeaderRoot({ children }: PropsWithChildren) {
     if (isProfileScreen) return;
     router.push("/(tabs)/profile");
   };
+
+  const isDark = useColorScheme() === "dark";
 
   return (
     <View
@@ -123,13 +125,13 @@ function HeaderRoot({ children }: PropsWithChildren) {
           {showNotificationControl ? (
             <Button
               variant="ghost"
-              onPress={() => router.push("/Notifictions")}
+              onPress={() => router.push("/Notifications")}
             >
               {notificationOverride ?? (
                 <Ionicons
                   name="notifications-outline"
                   size={24}
-                  color="white"
+                  color={isDark ? "#ffffff" : "#000000"}
                 />
               )}
             </Button>
@@ -138,7 +140,11 @@ function HeaderRoot({ children }: PropsWithChildren) {
             <Button variant="ghost" onPress={goProfile}>
               {profileOverride ??
                 (isProfileScreen || !avatarUri ? (
-                  <Ionicons name="person-outline" size={24} color="white" />
+                  <Ionicons
+                    name="person-outline"
+                    size={24}
+                    color={isDark ? "#ffffff" : "#000000"}
+                  />
                 ) : (
                   <Image
                     source={{ uri: avatarUri }}
