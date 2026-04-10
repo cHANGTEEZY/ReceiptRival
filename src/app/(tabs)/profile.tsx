@@ -1,10 +1,18 @@
 import React, { useCallback } from "react";
-import { Alert, Linking, ScrollView, Text, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  ScrollView,
+  Text,
+  useColorScheme,
+  View,
+} from "react-native";
 import { useRouter } from "expo-router";
 import {
   AddCircleIcon,
   Camera01Icon,
   Clock03Icon,
+  ColorsIcon,
   LockIcon,
   Logout01Icon,
   Notification01Icon,
@@ -15,11 +23,12 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Avatar } from "heroui-native/avatar";
 import { Button } from "heroui-native/button";
-import { Separator } from "heroui-native/separator";
+import { ListGroup } from "heroui-native/list-group";
 
 import SafeAreaWrapper from "../../components/SafeAreaWrapper";
 import { authClient } from "../../lib/auth-client";
-import { ProfileRow } from "../../features/Profile/component/ProfileRow";
+
+const ICON_STROKE = 1.5;
 
 function getInitials(name: string | null | undefined) {
   if (!name?.trim()) return "?";
@@ -32,8 +41,32 @@ function getInitials(name: string | null | undefined) {
     .join("");
 }
 
+function useProfileListIconColor() {
+  const scheme = useColorScheme();
+  return scheme === "dark" ? "#ffffff" : "#6b21a8";
+}
+
+function ProfileSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View className="mt-6">
+      <Text className="text-foreground/55 mb-2 px-1 text-xs font-semibold uppercase tracking-wide">
+        {title}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
+  const scheme = useColorScheme();
+  const listIconColor = useProfileListIconColor();
   const { data } = authClient.useSession();
   const user = data?.user;
   const name = user?.name ?? "Guest";
@@ -56,6 +89,13 @@ export default function ProfileScreen() {
     Alert.alert("Settings", "Account and app settings will be available soon.");
   }, []);
 
+  const openAppearance = useCallback(() => {
+    Alert.alert(
+      "Appearance",
+      "Theme controls are coming soon. The app currently follows your device light/dark setting.",
+    );
+  }, []);
+
   const confirmSignOut = useCallback(() => {
     Alert.alert("Log out", "Are you sure you want to log out?", [
       { text: "Cancel", style: "cancel" },
@@ -66,6 +106,9 @@ export default function ProfileScreen() {
       },
     ]);
   }, []);
+
+  const listSurfaceClass =
+    "overflow-hidden rounded-2xl border border-border bg-surface";
 
   return (
     <SafeAreaWrapper edges={["top", "left", "right", "bottom"]}>
@@ -112,7 +155,7 @@ export default function ProfileScreen() {
                 icon={PencilEdit02Icon}
                 size={18}
                 color="#ffffff"
-                strokeWidth={1.5}
+                strokeWidth={ICON_STROKE}
               />
             </Button>
           </View>
@@ -127,51 +170,203 @@ export default function ProfileScreen() {
           ) : null}
         </View>
 
-        <Separator className="mt-12" />
+        <ProfileSection title="App preferences">
+          <ListGroup variant="secondary" className={listSurfaceClass}>
+            <ListGroup.Item
+              onPress={openAppearance}
+              className="border-b border-border"
+            >
+              <ListGroup.ItemPrefix className="pl-1">
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-accent/12">
+                  <HugeiconsIcon
+                    icon={ColorsIcon}
+                    size={22}
+                    color={listIconColor}
+                    strokeWidth={ICON_STROKE}
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle>Appearance</ListGroup.ItemTitle>
+                <ListGroup.ItemDescription>
+                  Follows system · {scheme === "dark" ? "Dark" : "Light"} now
+                </ListGroup.ItemDescription>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix />
+            </ListGroup.Item>
+            <ListGroup.Item
+              onPress={() => router.push("/Notifications")}
+              className="border-b-0"
+            >
+              <ListGroup.ItemPrefix className="pl-1">
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-accent/12">
+                  <HugeiconsIcon
+                    icon={Notification01Icon}
+                    size={22}
+                    color={listIconColor}
+                    strokeWidth={ICON_STROKE}
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle>Notifications</ListGroup.ItemTitle>
+                <ListGroup.ItemDescription>
+                  Alerts, reminders, and nudges
+                </ListGroup.ItemDescription>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix />
+            </ListGroup.Item>
+          </ListGroup>
+        </ProfileSection>
 
-        <View className="pt-2 gap-1">
-          <ProfileRow
-            icon={Clock03Icon}
-            label="Split history"
-            onPress={() => router.push("/splits")}
-          />
-          <ProfileRow
-            icon={UserMultiple02Icon}
-            label="Friends"
-            onPress={() => router.push("/friends")}
-          />
-          <ProfileRow
-            icon={AddCircleIcon}
-            label="New split"
-            onPress={() => router.push("/NewSplit")}
-          />
-          <ProfileRow
-            icon={Camera01Icon}
-            label="Scan receipt"
-            onPress={() => router.push("/camera")}
-          />
-          <ProfileRow
-            icon={Notification01Icon}
-            label="Notifications"
-            onPress={() => router.push("/Notifications")}
-          />
-          <ProfileRow
-            icon={LockIcon}
-            label="Privacy policy"
-            onPress={openPrivacyPolicy}
-          />
-          <ProfileRow
-            icon={Settings01Icon}
-            label="Settings"
-            onPress={openSettings}
-          />
-          <ProfileRow
-            icon={Logout01Icon}
-            label="Log out"
-            onPress={confirmSignOut}
-            className="bg-red-500 dark:bg-red-800"
-          />
-        </View>
+        <ProfileSection title="Activity">
+          <ListGroup variant="secondary" className={listSurfaceClass}>
+            <ListGroup.Item
+              onPress={() => router.push("/splits")}
+              className="border-b border-border"
+            >
+              <ListGroup.ItemPrefix className="pl-1">
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-accent/12">
+                  <HugeiconsIcon
+                    icon={Clock03Icon}
+                    size={22}
+                    color={listIconColor}
+                    strokeWidth={ICON_STROKE}
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle>Split history</ListGroup.ItemTitle>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix />
+            </ListGroup.Item>
+            <ListGroup.Item
+              onPress={() => router.push("/friends")}
+              className="border-b border-border"
+            >
+              <ListGroup.ItemPrefix className="pl-1">
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-accent/12">
+                  <HugeiconsIcon
+                    icon={UserMultiple02Icon}
+                    size={22}
+                    color={listIconColor}
+                    strokeWidth={ICON_STROKE}
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle>Friends</ListGroup.ItemTitle>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix />
+            </ListGroup.Item>
+            <ListGroup.Item
+              onPress={() => router.push("/NewSplit")}
+              className="border-b border-border"
+            >
+              <ListGroup.ItemPrefix className="pl-1">
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-accent/12">
+                  <HugeiconsIcon
+                    icon={AddCircleIcon}
+                    size={22}
+                    color={listIconColor}
+                    strokeWidth={ICON_STROKE}
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle>New split</ListGroup.ItemTitle>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix />
+            </ListGroup.Item>
+            <ListGroup.Item
+              onPress={() => router.push("/camera")}
+              className="border-b-0"
+            >
+              <ListGroup.ItemPrefix className="pl-1">
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-accent/12">
+                  <HugeiconsIcon
+                    icon={Camera01Icon}
+                    size={22}
+                    color={listIconColor}
+                    strokeWidth={ICON_STROKE}
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle>Scan receipt</ListGroup.ItemTitle>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix />
+            </ListGroup.Item>
+          </ListGroup>
+        </ProfileSection>
+
+        <ProfileSection title="Legal">
+          <ListGroup variant="secondary" className={listSurfaceClass}>
+            <ListGroup.Item onPress={openPrivacyPolicy} className="border-b-0">
+              <ListGroup.ItemPrefix className="pl-1">
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-accent/12">
+                  <HugeiconsIcon
+                    icon={LockIcon}
+                    size={22}
+                    color={listIconColor}
+                    strokeWidth={ICON_STROKE}
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle>Privacy policy</ListGroup.ItemTitle>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix />
+            </ListGroup.Item>
+          </ListGroup>
+        </ProfileSection>
+
+        <ProfileSection title="Account">
+          <ListGroup variant="secondary" className={listSurfaceClass}>
+            <ListGroup.Item
+              onPress={openSettings}
+              className="border-b border-border"
+            >
+              <ListGroup.ItemPrefix className="pl-1">
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-accent/12">
+                  <HugeiconsIcon
+                    icon={Settings01Icon}
+                    size={22}
+                    color={listIconColor}
+                    strokeWidth={ICON_STROKE}
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle>Settings</ListGroup.ItemTitle>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix />
+            </ListGroup.Item>
+            <ListGroup.Item
+              onPress={confirmSignOut}
+              className="border-b-0 bg-red-500/10 dark:bg-red-950/45"
+            >
+              <ListGroup.ItemPrefix className="pl-1">
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-red-500/20 dark:bg-red-900/40">
+                  <HugeiconsIcon
+                    icon={Logout01Icon}
+                    size={22}
+                    color={scheme === "dark" ? "#fca5a5" : "#b91c1c"}
+                    strokeWidth={ICON_STROKE}
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle className="text-red-700 dark:text-red-300">
+                  Log out
+                </ListGroup.ItemTitle>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix
+                iconProps={{ color: scheme === "dark" ? "#fca5a5" : "#b91c1c" }}
+              />
+            </ListGroup.Item>
+          </ListGroup>
+        </ProfileSection>
       </ScrollView>
     </SafeAreaWrapper>
   );
