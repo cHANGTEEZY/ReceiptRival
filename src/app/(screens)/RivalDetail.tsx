@@ -41,7 +41,6 @@ const RivalDetail = () => {
       toast.show({
         variant: "success",
         label: "Rival removed",
-
         description: "They'll never know what hit them.",
       });
       router.back();
