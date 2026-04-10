@@ -3,16 +3,14 @@ import { Link, router } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import { Pressable, Text, View, useColorScheme } from "react-native";
 import { KeyboardAvoidingWrapper } from "../../components/SafeAreaWrapper";
-import {
-  Button,
-  Card,
-  Description,
-  FieldError,
-  InputGroup,
-  Label,
-  TextField,
-  useToast,
-} from "heroui-native";
+import { useToast } from "heroui-native/toast";
+import { Button } from "heroui-native/button";
+import { Card } from "heroui-native/card";
+import { TextField } from "heroui-native/text-field";
+import { Label } from "heroui-native/label";
+import { InputGroup } from "heroui-native/input-group";
+import { FieldError } from "heroui-native/field-error";
+
 import { authClient } from "../../lib/auth-client";
 import ReceiptRival from "../../components/ReceiptRival";
 import { PasswordToggleInput } from "./PasswordToggleInput";
@@ -149,10 +147,7 @@ export default function LoginScreen() {
           </Card.Header>
 
           <Card.Body className="gap-4 px-1 py-3">
-            <TextField
-              isRequired
-              isInvalid={Boolean(fieldErrs.email)}
-            >
+            <TextField isRequired isInvalid={Boolean(fieldErrs.email)}>
               <Label>
                 <Label.Text>Email</Label.Text>
               </Label>

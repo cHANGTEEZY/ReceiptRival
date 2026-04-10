@@ -24,9 +24,9 @@ export default function TabLayout() {
         <Icon sf="list.bullet" drawable="custom_splits_drawable" />
         <Label>Splits</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="friends">
-        <Icon sf="person.2.fill" drawable="custom_friends_drawable" />
-        <Label>Friends</Label>
+      <NativeTabs.Trigger name="rivals">
+        <Icon sf="person.2.fill" drawable="custom_rivals_drawable" />
+        <Label>Rivals</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon sf="person.fill" drawable="custom_profile_drawable" />
