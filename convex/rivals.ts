@@ -132,3 +132,27 @@ export const getRival = query({
     return await ctx.db.query("rivals").withIndex("by_user_rival", (q) => q.eq("userId", me._id).eq("rivalUserId", args.rivalUserId)).unique();
   },
 });
+
+export const removeRival = mutation({
+  args: {
+    rivalUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const me = await authComponent.safeGetAuthUser(ctx);
+    if (!me) {
+      throw new ConvexError("Unauthenticated");
+    }
+
+    const rival = await ctx.db
+      .query("rivals")
+      .withIndex("by_user_rival", (q) =>
+        q.eq("userId", me._id).eq("rivalUserId", args.rivalUserId),
+      )
+      .unique();
+    if (!rival) {
+      throw new ConvexError("This user is not on your rivals list.");
+    }
+
+    await ctx.db.delete(rival._id);
+  },
+});

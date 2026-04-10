@@ -1,10 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import {
-  Dimensions,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { Dimensions, ScrollView, Text, View } from "react-native";
 import { useMutation, useQuery } from "convex/react";
 import {
   Avatar,
@@ -108,10 +103,10 @@ export function AddRivalDialog({ open, onOpenChange }: AddRivalDialogProps) {
   }, [addRival, handleOpenChange, nickname, selected, toast]);
 
   return (
-    <Dialog isOpen={open} onOpenChange={handleOpenChange}>
+    <Dialog isOpen={open} onOpenChange={handleOpenChange} className="w-full">
       <Dialog.Portal>
         <Dialog.Overlay />
-        <Dialog.Content className="mx-4 w-[92%] max-w-md rounded-2xl bg-surface p-0">
+        <Dialog.Content className="mx-4 rounded-2xl bg-surface p-0">
           <View className="flex-row items-start justify-between gap-2 border-b border-border px-4 py-3">
             <View className="flex-1">
               <Dialog.Title className="text-lg font-semibold text-foreground">
@@ -168,9 +163,7 @@ export function AddRivalDialog({ open, onOpenChange }: AddRivalDialogProps) {
                           color="accent"
                         >
                           {user.image ? (
-                            <Avatar.Image
-                              source={{ uri: user.image }}
-                            />
+                            <Avatar.Image source={{ uri: user.image }} />
                           ) : null}
                           <Avatar.Fallback className="text-xs font-semibold">
                             {getInitials(user.name)}
