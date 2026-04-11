@@ -20,6 +20,7 @@ import {
   Select,
   TextField,
 } from "heroui-native";
+import { Avatar } from "heroui-native/avatar";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -34,6 +35,9 @@ import {
   SPLIT_CATEGORIES,
   splitsFormSchema,
 } from "./schema";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 function formatDateYmd(d: Date = new Date()) {
   const y = d.getFullYear();
@@ -50,6 +54,17 @@ function parseYmdToLocalDate(s: string | undefined): Date {
   const mo = Number(m[2]) - 1;
   const d = Number(m[3]);
   return new Date(y, mo, d);
+}
+
+function getInitials(name: string) {
+  if (!name.trim()) return "?";
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 function formatDateDisplay(ymd: string | undefined) {
@@ -72,6 +87,13 @@ const defaultItem = (): SplitsFormSchema["items"][number] => ({
 
 const SplitForm = () => {
   const colorScheme = useColorScheme();
+  const rivals = useQuery(api.rivals.listMyRivals);
+  const createSplit = useMutation(api.splits.createSplit);
+  /** Lets qty field go empty while editing; we commit on blur (see quantity Controller). */
+  const [qtyDraftByRowId, setQtyDraftByRowId] = useState<
+    Record<string, string>
+  >({});
+  const qtyDraftRef = useRef<Record<string, string>>({});
   const dateAffordanceColor = colorScheme === "dark" ? "#a3a3a3" : "#737373";
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [datePickerWorking, setDatePickerWorking] = useState(() =>
@@ -95,6 +117,7 @@ const SplitForm = () => {
       date: formatDateYmd(),
       time: "",
       location: "",
+      rivalIds: [],
       items: [defaultItem()],
     },
     mode: "onBlur",
@@ -147,8 +170,23 @@ const SplitForm = () => {
       ? { value: category, label: category }
       : { value: SPLIT_CATEGORIES[0], label: SPLIT_CATEGORIES[0] };
 
-  const onSubmit = (data: SplitsFormSchema) => {
-    console.log("Split form:", data);
+  const onSubmit = async (data: SplitsFormSchema) => {
+    await createSplit({
+      title: data.title,
+      date: data.date?.trim() || undefined,
+      time: data.time?.trim() || undefined,
+      location: data.location?.trim() || undefined,
+      category: data.category,
+      items: data.items.map((row) => ({
+        name: row.itemName,
+        price: row.itemPrice,
+        quantity: row.itemQuantity,
+      })),
+      tax: data.tax,
+      tip: data.tip,
+      total: data.total,
+      rivalIds: data.rivalIds as Id<"rivals">[],
+    });
   };
 
   return (
@@ -379,7 +417,7 @@ const SplitForm = () => {
                       )}
                     />
                   </View>
-                  <View className="w-[110px]">
+                  <View className="w-[88px]">
                     <Controller
                       control={form.control}
                       name={`items.${index}.itemPrice`}
@@ -416,12 +454,92 @@ const SplitForm = () => {
                       )}
                     />
                   </View>
+                  <View className="w-[64px]">
+                    <Controller
+                      control={form.control}
+                      name={`items.${index}.itemQuantity`}
+                      render={({ field, fieldState }) => {
+                        const rowId = fields[index].id;
+                        const hasDraft =
+                          Object.prototype.hasOwnProperty.call(
+                            qtyDraftByRowId,
+                            rowId,
+                          );
+                        const qtyDisplay = hasDraft
+                          ? qtyDraftByRowId[rowId]
+                          : String(field.value);
+                        return (
+                          <TextField
+                            isInvalid={Boolean(fieldState.error)}
+                            className="gap-1"
+                          >
+                            <Label>
+                              <Label.Text className="text-xs">Qty</Label.Text>
+                            </Label>
+                            <InputGroup>
+                              <InputGroup.Input
+                                placeholder="1"
+                                keyboardType="number-pad"
+                                value={qtyDisplay}
+                                onChangeText={(t) => {
+                                  const cleaned = t.replace(/[^0-9]/g, "");
+                                  qtyDraftRef.current[rowId] = cleaned;
+                                  setQtyDraftByRowId((prev) => ({
+                                    ...prev,
+                                    [rowId]: cleaned,
+                                  }));
+                                  if (cleaned === "") {
+                                    return;
+                                  }
+                                  const n = parseInt(cleaned, 10);
+                                  if (Number.isFinite(n) && n >= 1) {
+                                    field.onChange(n);
+                                  }
+                                }}
+                                onBlur={() => {
+                                  const raw =
+                                    qtyDraftRef.current[rowId] ??
+                                    String(field.value);
+                                  const cleaned = raw.replace(/[^0-9]/g, "");
+                                  const n = parseInt(cleaned, 10);
+                                  field.onChange(
+                                    Number.isFinite(n) && n >= 1 ? n : 1,
+                                  );
+                                  delete qtyDraftRef.current[rowId];
+                                  setQtyDraftByRowId((prev) => {
+                                    if (!(rowId in prev)) return prev;
+                                    const next = { ...prev };
+                                    delete next[rowId];
+                                    return next;
+                                  });
+                                  field.onBlur();
+                                }}
+                              />
+                            </InputGroup>
+                            {fieldState.error ? (
+                              <FieldError>{fieldState.error.message}</FieldError>
+                            ) : null}
+                          </TextField>
+                        );
+                      }}
+                    />
+                  </View>
                 </View>
                 {fields.length > 1 ? (
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Remove item ${index + 1}`}
-                    onPress={() => remove(index)}
+                    onPress={() => {
+                      const rowId = fields[index].id;
+                      delete qtyDraftRef.current[rowId];
+                      setQtyDraftByRowId((prev) => {
+                        if (!(rowId in prev)) return prev;
+                        const next = { ...prev };
+                        delete next[rowId];
+                        return next;
+                      });
+                      remove(index);
+                    }}
                     className="self-end py-1"
                   >
                     <Text className="text-sm text-danger">Remove</Text>
@@ -558,6 +676,87 @@ const SplitForm = () => {
               )}
             />
           </View>
+
+          <Controller
+            control={form.control}
+            name="rivalIds"
+            render={({ field }) => (
+              <View className="gap-2">
+                <Text className="text-sm font-medium text-foreground">
+                  Split with
+                </Text>
+                <Text className="text-xs text-foreground/50">
+                  Tap a rival to add or remove them from this split.
+                </Text>
+                {rivals === undefined ? (
+                  <Text className="text-sm text-foreground/60">
+                    Loading rivals…
+                  </Text>
+                ) : rivals.length === 0 ? (
+                  <Text className="text-sm text-foreground/60">
+                    No rivals yet. Add people from the Rivals tab to split bills
+                    with them.
+                  </Text>
+                ) : (
+                  <ScrollView
+                    horizontal
+                    nestedScrollEnabled
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 12, paddingVertical: 4 }}
+                  >
+                    {rivals.map((r) => {
+                      const displayName = r.nickname ?? r.name;
+                      const selected = field.value.includes(r._id);
+                      return (
+                        <Pressable
+                          key={r._id}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected }}
+                          accessibilityLabel={`${selected ? "Remove" : "Add"} ${displayName} from split`}
+                          onPress={() => {
+                            const next = selected
+                              ? field.value.filter((id) => id !== r._id)
+                              : [...field.value, r._id];
+                            field.onChange(next);
+                          }}
+                          className="items-center gap-1.5"
+                        >
+                          <View
+                            className={`rounded-full p-0.5 ${selected ? "bg-accent" : "bg-transparent"}`}
+                          >
+                            <Avatar
+                              alt={displayName}
+                              size="lg"
+                              variant="soft"
+                              color="accent"
+                              className={
+                                selected
+                                  ? "border-2 border-background"
+                                  : "opacity-90"
+                              }
+                            >
+                              {r.image ? (
+                                <Avatar.Image source={{ uri: r.image }} />
+                              ) : null}
+                              <Avatar.Fallback className="font-semibold">
+                                {getInitials(displayName)}
+                              </Avatar.Fallback>
+                            </Avatar>
+                          </View>
+                          <Text
+                            className="max-w-[72px] text-center text-xs text-foreground/80"
+                            numberOfLines={1}
+                          >
+                            {displayName}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </View>
+            )}
+          />
 
           <Button
             onPress={form.handleSubmit(onSubmit)}

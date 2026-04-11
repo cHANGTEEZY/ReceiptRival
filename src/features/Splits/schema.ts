@@ -38,6 +38,8 @@ export const splitsFormSchema = z.object({
       }),
     )
     .min(1, { message: "Add at least one line item" }),
+  /** Convex `rivals` document ids — tap rivals in the UI to add/remove */
+  rivalIds: z.array(z.string()),
 });
 
 export type SplitsFormSchema = z.infer<typeof splitsFormSchema>;

@@ -22,18 +22,21 @@ const schema = defineSchema({
   splits: defineTable({
     title: v.string(),
     date: v.optional(v.string()),
+    time: v.optional(v.string()),
     location: v.string(),
     category: v.string(),
     items: v.array(
       v.object({
         name: v.string(),
         price: v.number(),
-      })
+        quantity: v.number(),
+      }),
     ),
     tax: v.optional(v.number()),
     tip: v.optional(v.number()),
     total: v.number(),
-    userId: v.id("users"), // creator
+    // Better Auth user id (same opaque string as `rivals.userId`)
+    userId: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("userId", ["userId"]),
