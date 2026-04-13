@@ -11,6 +11,11 @@ const schema = defineSchema({
     userId: v.string(),
     rivalUserId: v.string(),
     nickname: v.optional(v.string()),
+    rivalStatus: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("rejected"),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

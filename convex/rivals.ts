@@ -55,17 +55,37 @@ export const addRival = mutation({
     }
 
     const now = Date.now();
-    return await ctx.db.insert("rivals", {
+    const myRowId = await ctx.db.insert("rivals", {
       userId: me._id,
       rivalUserId: args.rivalUserId,
       nickname,
+      rivalStatus: "pending",
       createdAt: now,
       updatedAt: now,
     });
+
+    // Mirror so both users see each other on their rivals list.
+    const reverse = await ctx.db
+      .query("rivals")
+      .withIndex("by_user_rival", (q) =>
+        q.eq("userId", args.rivalUserId).eq("rivalUserId", me._id),
+      )
+      .unique();
+    if (!reverse) {
+      await ctx.db.insert("rivals", {
+        userId: args.rivalUserId,
+        rivalUserId: me._id,
+        rivalStatus: "pending",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    return myRowId;
   },
 });
 
-/** Rivals you added, with Better Auth profile fields for display. */
+/** Rivals on your list (each connection is stored both ways). */
 export const listMyRivals = query({
   handler: async (ctx) => {
     const me = await authComponent.safeGetAuthUser(ctx);
@@ -129,9 +149,69 @@ export const getRival = query({
       throw new ConvexError("Unauthenticated");
     }
 
-    return await ctx.db.query("rivals").withIndex("by_user_rival", (q) => q.eq("userId", me._id).eq("rivalUserId", args.rivalUserId)).unique();
+    const rival = await ctx.db.query("rivals").withIndex("by_user_rival", (q) => q.eq("userId", me._id).eq("rivalUserId", args.rivalUserId)).unique();
+    
+    const filteredRival = rival?.rivalStatus === "accepted" ? rival : null
+
+    if (!filteredRival) {
+      throw new ConvexError("This user is not on your rivals list.");
+    }
+
+    return filteredRival;
   },
 });
+
+export const acceptRival = mutation({
+  args: {
+    rivalId: v.id("rivals"),
+  },handler: async (ctx, args) => {
+    const me = await authComponent.safeGetAuthUser(ctx);
+    if (!me) {
+      throw new ConvexError("Unauthenticated");
+    }
+
+    const rival = await ctx.db.get(args.rivalId);
+    if (!rival) {
+      throw new ConvexError("This user is not on your rivals list.");
+    }
+
+    if (rival.rivalStatus === "accepted") {
+      throw new ConvexError("This user is already accepted.");
+    }
+
+    await ctx.db.patch(args.rivalId, {
+      rivalStatus: "accepted",
+    });
+
+    return rival;
+  },
+})
+
+export const rejectRival = mutation({
+  args: {
+    rivalId: v.id("rivals"),
+  },handler: async (ctx, args) => {
+    const me = await authComponent.safeGetAuthUser(ctx);
+    if (!me) {
+      throw new ConvexError("Unauthenticated");
+    }
+
+    const rival = await ctx.db.get(args.rivalId);
+    if (!rival) {
+      throw new ConvexError("This user is not on your rivals list.");
+    }
+
+    if (rival.rivalStatus === "accepted") {
+      throw new ConvexError("This user is already accepted.");
+    }
+
+    await ctx.db.patch(args.rivalId, {
+      rivalStatus: "rejected",
+    });
+
+    return rival;
+  },
+})
 
 export const removeRival = mutation({
   args: {
@@ -154,5 +234,15 @@ export const removeRival = mutation({
     }
 
     await ctx.db.delete(rival._id);
+
+    const reverse = await ctx.db
+      .query("rivals")
+      .withIndex("by_user_rival", (q) =>
+        q.eq("userId", args.rivalUserId).eq("rivalUserId", me._id),
+      )
+      .unique();
+    if (reverse) {
+      await ctx.db.delete(reverse._id);
+    }
   },
 });
