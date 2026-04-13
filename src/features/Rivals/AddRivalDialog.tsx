@@ -34,7 +34,7 @@ export type AddRivalDialogProps = {
 
 export function AddRivalDialog({ open, onOpenChange }: AddRivalDialogProps) {
   const { toast } = useToast();
-  const users = useQuery(api.rivals.getUsers);
+  const users = useQuery(api.rivals.getUsers, open ? {} : "skip");
   const addRival = useMutation(api.rivals.addRival);
 
   const [step, setStep] = useState<Step>("list");
@@ -146,7 +146,7 @@ export function AddRivalDialog({ open, onOpenChange }: AddRivalDialogProps) {
                 ) : filtered.length === 0 ? (
                   <Text className="py-6 text-center text-foreground/60">
                     {users.length === 0
-                      ? "No other accounts to add yet."
+                      ? "No other accounts yet. Add rival only works after someone else signs up (another device, simulator, or a second email). Sign out and create a test account if you need to try it solo."
                       : "No matches for your search."}
                   </Text>
                 ) : (

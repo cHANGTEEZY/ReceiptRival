@@ -5,16 +5,18 @@ import { v } from "convex/values";
 const schema = defineSchema({
   ...authTables,
 
-  //* Your contact/friends list — "add user as rival"
   rivals: defineTable({
-    // Better Auth component user document ids (opaque strings, not root `users` table)
     userId: v.string(),
     rivalUserId: v.string(),
     nickname: v.optional(v.string()),
-    rivalStatus: v.union(
-      v.literal("pending"),
-      v.literal("accepted"),
-      v.literal("rejected"),
+    invitedByUserId: v.optional(v.string()),
+    // Optional only for legacy rows; run `internal.rivals.backfillRivalStatus` once, then make required again.
+    rivalStatus: v.optional(
+      v.union(
+        v.literal("pending"),
+        v.literal("accepted"),
+        v.literal("rejected"),
+      ),
     ),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -40,7 +42,6 @@ const schema = defineSchema({
     tax: v.optional(v.number()),
     tip: v.optional(v.number()),
     total: v.number(),
-    // Better Auth user id (same opaque string as `rivals.userId`)
     userId: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
