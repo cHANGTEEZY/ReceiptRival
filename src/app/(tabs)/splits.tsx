@@ -17,12 +17,17 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import { formatUsd } from "../../lib/format-currency";
 import { SPLITS_ACTIVITY_ROWS } from "../../lib/data";
 import { getActivityCategoryIcon } from "../../lib/activity-category-icon";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 const SplitsScreen = () => {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const inset = useSafeAreaInsets();
   const isDark = colorScheme === "dark";
+
+  const splits = useQuery(api.splits.getAllSplits) ?? [];
+  console.log("splits", JSON.stringify(splits, null, 2));
 
   return (
     <View className="flex-1 bg-background">

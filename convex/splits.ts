@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
 export const createSplit = mutation({
@@ -19,6 +19,7 @@ export const createSplit = mutation({
     tax: v.optional(v.number()),
     tip: v.optional(v.number()),
     total: v.number(),
+    completion_status: v.union(v.literal("pending"), v.literal("completed"), v.literal("cancelled")),
     rivalIds: v.array(v.id("rivals")),
   },
   handler: async (ctx, args) => {
@@ -47,6 +48,7 @@ export const createSplit = mutation({
       total: args.total,
       userId: me._id,
       createdAt: now,
+      completion_status: "pending",
       updatedAt: now,
     });
 
@@ -65,5 +67,23 @@ export const createSplit = mutation({
     }
 
     return splitId;
+  },
+});
+
+export const getAllSplits = query({
+  args: {},
+  handler: async (ctx) => {
+    const me = await authComponent.safeGetAuthUser(ctx);
+    
+    if (!me) {
+      throw new ConvexError("Unauthenticated");
+    }
+
+    const rows = await ctx.db
+      .query("splits")
+      .withIndex("userId", (q) => q.eq("userId", me._id))
+      .collect();
+
+    return rows.sort((a, b) => b.createdAt - a.createdAt);
   },
 });

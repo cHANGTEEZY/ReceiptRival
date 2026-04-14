@@ -25,7 +25,6 @@ const schema = defineSchema({
     .index("rivalUserId", ["rivalUserId"])
     .index("by_user_rival", ["userId", "rivalUserId"]),
 
-  // The bill/expense
   splits: defineTable({
     title: v.string(),
     date: v.optional(v.string()),
@@ -42,16 +41,16 @@ const schema = defineSchema({
     tax: v.optional(v.number()),
     tip: v.optional(v.number()),
     total: v.number(),
+    completion_status: v.union(v.literal("pending"), v.literal("completed"), v.literal("cancelled")),
     userId: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("userId", ["userId"]),
 
-  // Junction table: who owes what in a split + payment status
   splitParticipants: defineTable({
     splitId: v.id("splits"), 
     rivalId: v.id("rivals"),
-    amount: v.number(),          // their share
+    amount: v.number(),          
     paid: v.boolean(),
     paidAt: v.optional(v.number()),
     createdAt: v.number(),

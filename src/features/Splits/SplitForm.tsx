@@ -19,6 +19,7 @@ import {
   Label,
   Select,
   TextField,
+  useToast,
 } from "heroui-native";
 import { Avatar } from "heroui-native/avatar";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
@@ -85,11 +86,27 @@ const defaultItem = (): SplitsFormSchema["items"][number] => ({
   itemQuantity: 1,
 });
 
+function getDefaultFormValues(): SplitsFormSchema {
+  return {
+    title: "",
+    category: "Food & Drink",
+    total: 0,
+    tax: undefined,
+    tip: undefined,
+    date: formatDateYmd(),
+    time: "",
+    location: "",
+    rivalIds: [],
+    items: [defaultItem()],
+  };
+}
+
 const SplitForm = () => {
   const colorScheme = useColorScheme();
+  const { toast } = useToast();
   const rivals = useQuery(api.rivals.listMyRivals);
   const createSplit = useMutation(api.splits.createSplit);
-  /** Lets qty field go empty while editing; we commit on blur (see quantity Controller). */
+
   const [qtyDraftByRowId, setQtyDraftByRowId] = useState<
     Record<string, string>
   >({});
@@ -108,18 +125,7 @@ const SplitForm = () => {
 
   const form = useForm<SplitsFormSchema>({
     resolver: zodResolver(splitsFormSchema),
-    defaultValues: {
-      title: "",
-      category: "Food & Drink",
-      total: 0,
-      tax: undefined,
-      tip: undefined,
-      date: formatDateYmd(),
-      time: "",
-      location: "",
-      rivalIds: [],
-      items: [defaultItem()],
-    },
+    defaultValues: getDefaultFormValues(),
     mode: "onBlur",
   });
 
@@ -182,22 +188,42 @@ const SplitForm = () => {
       : { value: SPLIT_CATEGORIES[0], label: SPLIT_CATEGORIES[0] };
 
   const onSubmit = async (data: SplitsFormSchema) => {
-    await createSplit({
-      title: data.title,
-      date: data.date?.trim() || undefined,
-      time: data.time?.trim() || undefined,
-      location: data.location?.trim() || undefined,
-      category: data.category,
-      items: data.items.map((row) => ({
-        name: row.itemName,
-        price: row.itemPrice,
-        quantity: row.itemQuantity,
-      })),
-      tax: data.tax,
-      tip: data.tip,
-      total: data.total,
-      rivalIds: data.rivalIds as Id<"rivals">[],
-    });
+    try {
+      await createSplit({
+        title: data.title,
+        date: data.date?.trim() || undefined,
+        time: data.time?.trim() || undefined,
+        location: data.location?.trim() || undefined,
+        category: data.category,
+        items: data.items.map((row) => ({
+          name: row.itemName,
+          price: row.itemPrice,
+          quantity: row.itemQuantity,
+        })),
+        tax: data.tax,
+        tip: data.tip,
+        total: data.total,
+        rivalIds: data.rivalIds as Id<"rivals">[],
+      });
+      toast.show({
+        variant: "success",
+        label: "Split dropped like it’s hot",
+        description:
+          "Your receipt is on the books. Rivals: the tab is real and the vibes are fiscal.",
+      });
+      qtyDraftRef.current = {};
+      setQtyDraftByRowId({});
+      form.reset(getDefaultFormValues());
+      setDatePickerWorking(parseYmdToLocalDate(formatDateYmd()));
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : "Couldn’t save this split. Try again.";
+      toast.show({
+        variant: "danger",
+        label: "Split failed to launch",
+        description: message,
+      });
+    }
   };
 
   return (
