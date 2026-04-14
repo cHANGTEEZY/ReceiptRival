@@ -5,7 +5,6 @@ import HeaderRoot from "../../components/composition/Header";
 import { Avatar } from "heroui-native/avatar";
 import { Button } from "heroui-native/button";
 import { Card } from "heroui-native/card";
-
 import { Tabs } from "heroui-native/tabs";
 import { AddRivalDialog } from "../../features/Rivals/AddRivalDialog";
 import { api } from "../../../convex/_generated/api";

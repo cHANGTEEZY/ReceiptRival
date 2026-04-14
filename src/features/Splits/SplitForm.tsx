@@ -130,6 +130,8 @@ const SplitForm = () => {
 
   const items = useWatch({ control: form.control, name: "items" });
   const category = useWatch({ control: form.control, name: "category" });
+  const taxWatched = useWatch({ control: form.control, name: "tax" });
+  const tipWatched = useWatch({ control: form.control, name: "tip" });
   const watchedTotal = useWatch({ control: form.control, name: "total" });
   const totalDisplay = (() => {
     const n =
@@ -139,16 +141,25 @@ const SplitForm = () => {
 
   useEffect(() => {
     if (!items?.length) return;
-    const sum = items.reduce(
+    const subtotal = items.reduce(
       (acc, row) =>
         acc + (Number(row?.itemPrice) || 0) * (Number(row?.itemQuantity) || 1),
       0,
     );
+    const taxAmt =
+      typeof taxWatched === "number" && Number.isFinite(taxWatched)
+        ? taxWatched
+        : 0;
+    const tipAmt =
+      typeof tipWatched === "number" && Number.isFinite(tipWatched)
+        ? tipWatched
+        : 0;
+    const sum = subtotal + taxAmt + tipAmt;
     form.setValue("total", sum, {
       shouldValidate: true,
       shouldDirty: true,
     });
-  }, [items, form]);
+  }, [items, taxWatched, tipWatched, form]);
 
   useEffect(() => {
     if (Platform.OS !== "android" || !datePickerOpen) return;
@@ -460,11 +471,10 @@ const SplitForm = () => {
                       name={`items.${index}.itemQuantity`}
                       render={({ field, fieldState }) => {
                         const rowId = fields[index].id;
-                        const hasDraft =
-                          Object.prototype.hasOwnProperty.call(
-                            qtyDraftByRowId,
-                            rowId,
-                          );
+                        const hasDraft = Object.prototype.hasOwnProperty.call(
+                          qtyDraftByRowId,
+                          rowId,
+                        );
                         const qtyDisplay = hasDraft
                           ? qtyDraftByRowId[rowId]
                           : String(field.value);
@@ -517,7 +527,9 @@ const SplitForm = () => {
                               />
                             </InputGroup>
                             {fieldState.error ? (
-                              <FieldError>{fieldState.error.message}</FieldError>
+                              <FieldError>
+                                {fieldState.error.message}
+                              </FieldError>
                             ) : null}
                           </TextField>
                         );
