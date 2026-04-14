@@ -873,29 +873,33 @@ const SplitForm = () => {
               <Text className="text-xs text-foreground/50">
                 Add yourself and rivals, then assign how much each person owes.
               </Text>
-              <Button
-                variant="outline"
-                className="rounded-xl"
-                onPress={() => {
-                  Keyboard.dismiss();
-                  setParticipantDrawerOpen(true);
-                }}
-              >
-                <Button.Label>Add people to split</Button.Label>
-                <HugeiconsIcon icon={Add01Icon} size={20} color="#737373" />
-              </Button>
-              {hasParticipants ? (
-                <View className="flex-row flex-wrap items-center gap-3 mt-2">
+              <View className="mt-2 gap-2">
+                <View className="flex-row flex-wrap items-center gap-3">
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Add people to this split"
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setParticipantDrawerOpen(true);
+                    }}
+                    style={{ borderStyle: "dashed" }}
+                    className="h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-foreground/35 bg-surface/40 active:opacity-80"
+                  >
+                    <HugeiconsIcon icon={Add01Icon} size={22} color="#737373" />
+                  </Pressable>
                   {includeMeWatched ? (
                     <View className="relative">
-                      <View
-                        className="h-14 w-14 items-center justify-center rounded-full bg-accent/25"
+                      <Avatar
+                        alt="You"
+                        size="lg"
+                        variant="soft"
+                        color="accent"
                         accessibilityLabel="You on this split"
                       >
-                        <Text className="text-base font-bold text-foreground">
+                        <Avatar.Fallback className="text-base font-bold">
                           ME
-                        </Text>
-                      </View>
+                        </Avatar.Fallback>
+                      </Avatar>
                       <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Remove yourself from this split"
@@ -960,11 +964,12 @@ const SplitForm = () => {
                     );
                   })}
                 </View>
-              ) : (
-                <Text className="text-sm text-foreground/50">
-                  Nobody on this split yet. Use Add people to split.
-                </Text>
-              )}
+                {!hasParticipants ? (
+                  <Text className="text-sm text-foreground/50">
+                    Tap the + to choose yourself and rivals.
+                  </Text>
+                ) : null}
+              </View>
               <View className="gap-1.5 mt-2">
                 <Button
                   variant="outline"
