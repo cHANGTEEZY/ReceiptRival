@@ -15,6 +15,7 @@ import {
 import {
   BottomSheet,
   Button,
+  Card,
   FieldError,
   InputGroup,
   Label,
@@ -30,6 +31,7 @@ import {
   Add01Icon,
   ArrowDown01Icon,
   Calendar03Icon,
+  Cancel01Icon,
   SaveIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
@@ -160,7 +162,7 @@ function getDefaultFormValues(): SplitsFormSchema {
     date: formatDateYmd(),
     time: "",
     location: "",
-    includeMe: true,
+    includeMe: false,
     creatorAmount: 0,
     rivalIds: [],
     rivalAmounts: {},
@@ -180,6 +182,7 @@ const SplitForm = () => {
   const qtyDraftRef = useRef<Record<string, string>>({});
   const dateAffordanceColor = colorScheme === "dark" ? "#a3a3a3" : "#737373";
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [participantDrawerOpen, setParticipantDrawerOpen] = useState(false);
   const [amountPopoverOpen, setAmountPopoverOpen] = useState(false);
 
   const dismissKeyboardAndCloseAmount = (open: boolean) => {
@@ -214,7 +217,10 @@ const SplitForm = () => {
   const taxWatched = useWatch({ control: form.control, name: "tax" });
   const tipWatched = useWatch({ control: form.control, name: "tip" });
   const watchedTotal = useWatch({ control: form.control, name: "total" });
-  const includeMeWatched = useWatch({ control: form.control, name: "includeMe" });
+  const includeMeWatched = useWatch({
+    control: form.control,
+    name: "includeMe",
+  });
   const rivalIdsWatched = useWatch({ control: form.control, name: "rivalIds" });
   const creatorAmountWatched = useWatch({
     control: form.control,
@@ -312,12 +318,15 @@ const SplitForm = () => {
   const totalNum =
     typeof watchedTotal === "number" ? watchedTotal : Number(watchedTotal);
   const assignedOk =
-    Number.isFinite(totalNum) &&
-    Math.abs(assignedSum - totalNum) <= 0.011;
-  const remainingAmount =
-    Number.isFinite(totalNum) ? Math.max(0, totalNum - assignedSum) : 0;
+    Number.isFinite(totalNum) && Math.abs(assignedSum - totalNum) <= 0.011;
+  const remainingAmount = Number.isFinite(totalNum)
+    ? Math.max(0, totalNum - assignedSum)
+    : 0;
   const overAssigned =
     Number.isFinite(totalNum) && assignedSum - totalNum > 0.011;
+
+  const hasParticipants =
+    Boolean(includeMeWatched) || (rivalIdsWatched?.length ?? 0) > 0;
 
   const onSubmit = async (data: SplitsFormSchema) => {
     try {
@@ -858,139 +867,127 @@ const SplitForm = () => {
             onOpenChange={dismissKeyboardAndCloseAmount}
           >
             <View className="gap-2">
-            <Text className="text-sm font-medium text-foreground">
-              Split with
-            </Text>
-            <Text className="text-xs text-foreground/50">
-              Include yourself and/or rivals, then tap below or a chip to set
-              amounts.
-            </Text>
-            <ScrollView
-              horizontal
-              nestedScrollEnabled
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 12, paddingVertical: 4 }}
-            >
-              <Controller
-                control={form.control}
-                name="includeMe"
-                render={({ field }) => (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: field.value }}
-                    accessibilityLabel="Include yourself in the split"
-                    onPress={() => {
-                      field.onChange(!field.value);
-                      setAmountPopoverOpen(true);
-                    }}
-                    className="items-center gap-1.5"
-                  >
-                    <View
-                      className={`rounded-full p-0.5 ${field.value ? "bg-accent" : "bg-transparent"}`}
-                    >
-                      <View className="h-14 w-14 items-center justify-center rounded-full bg-accent/20">
-                        <Text className="text-lg font-bold text-foreground">
-                          Me
+              <Text className="text-sm font-medium text-foreground">
+                Split with
+              </Text>
+              <Text className="text-xs text-foreground/50">
+                Add yourself and rivals, then assign how much each person owes.
+              </Text>
+              <Button
+                variant="outline"
+                className="rounded-xl"
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setParticipantDrawerOpen(true);
+                }}
+              >
+                <Button.Label>Add people to split</Button.Label>
+                <HugeiconsIcon icon={Add01Icon} size={20} color="#737373" />
+              </Button>
+              {hasParticipants ? (
+                <View className="flex-row flex-wrap items-center gap-3 mt-2">
+                  {includeMeWatched ? (
+                    <View className="relative">
+                      <View
+                        className="h-14 w-14 items-center justify-center rounded-full bg-accent/25"
+                        accessibilityLabel="You on this split"
+                      >
+                        <Text className="text-base font-bold text-foreground">
+                          ME
                         </Text>
                       </View>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Remove yourself from this split"
+                        hitSlop={8}
+                        onPress={() =>
+                          form.setValue("includeMe", false, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          })
+                        }
+                        className="absolute -right-0.5 -top-0.5 h-6 w-6 items-center justify-center rounded-full border border-border bg-background shadow-sm active:opacity-80"
+                      >
+                        <HugeiconsIcon
+                          icon={Cancel01Icon}
+                          size={12}
+                          color="#737373"
+                        />
+                      </Pressable>
                     </View>
-                    <Text className="max-w-[72px] text-center text-xs text-foreground/80">
-                      Me
-                    </Text>
-                  </Pressable>
-                )}
-              />
-              <Controller
-                control={form.control}
-                name="rivalIds"
-                render={({ field: rivalField }) => (
-                  <>
-                    {rivals === undefined ? (
-                      <Text className="self-center text-sm text-foreground/60">
-                        Loading rivals…
-                      </Text>
-                    ) : rivals.length === 0 ? (
-                      <Text className="self-center text-sm text-foreground/60">
-                        No rivals yet.
-                      </Text>
-                    ) : (
-                      rivals.map((r) => {
-                        const displayName = r.nickname ?? r.name;
-                        const selected = rivalField.value.includes(r._id);
-                        return (
-                          <Pressable
-                            key={r._id}
-                            accessibilityRole="button"
-                            accessibilityState={{ selected }}
-                            accessibilityLabel={`${selected ? "Remove" : "Add"} ${displayName} from split`}
-                            onPress={() => {
-                              const next = selected
-                                ? rivalField.value.filter((id) => id !== r._id)
-                                : [...rivalField.value, r._id];
-                              rivalField.onChange(next);
-                              setAmountPopoverOpen(true);
-                            }}
-                            className="items-center gap-1.5"
-                          >
-                            <View
-                              className={`rounded-full p-0.5 ${selected ? "bg-accent" : "bg-transparent"}`}
-                            >
-                              <Avatar
-                                alt={displayName}
-                                size="lg"
-                                variant="soft"
-                                color="accent"
-                                className={
-                                  selected
-                                    ? "border-2 border-background"
-                                    : "opacity-90"
-                                }
-                              >
-                                {r.image ? (
-                                  <Avatar.Image source={{ uri: r.image }} />
-                                ) : null}
-                                <Avatar.Fallback className="font-semibold">
-                                  {getInitials(displayName)}
-                                </Avatar.Fallback>
-                              </Avatar>
-                            </View>
-                            <Text
-                              className="max-w-[72px] text-center text-xs text-foreground/80"
-                              numberOfLines={1}
-                            >
-                              {displayName}
-                            </Text>
-                          </Pressable>
-                        );
-                      })
-                    )}
-                  </>
-                )}
-              />
-            </ScrollView>
-            <Popover.Trigger className="rounded-xl border border-border bg-background-secondary px-3 py-3 active:opacity-80">
-              <View>
-                <Text className="text-sm font-medium text-foreground">
-                  Amounts
+                  ) : null}
+                  {(rivalIdsWatched ?? []).map((rid) => {
+                    const r = rivals?.find((x) => x._id === rid);
+                    const displayName = r?.nickname ?? r?.name ?? "Rival";
+                    return (
+                      <View key={rid} className="relative">
+                        <Avatar
+                          alt={displayName}
+                          size="lg"
+                          variant="soft"
+                          color="accent"
+                          accessibilityLabel={displayName}
+                        >
+                          {r?.image ? (
+                            <Avatar.Image source={{ uri: r.image }} />
+                          ) : null}
+                          <Avatar.Fallback className="text-base font-bold">
+                            {getInitials(displayName)}
+                          </Avatar.Fallback>
+                        </Avatar>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${displayName} from this split`}
+                          hitSlop={8}
+                          onPress={() => {
+                            const next = (rivalIdsWatched ?? []).filter(
+                              (id) => id !== rid,
+                            );
+                            form.setValue("rivalIds", next, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                          }}
+                          className="absolute -right-0.5 -top-0.5 h-6 w-6 items-center justify-center rounded-full border border-border bg-background shadow-sm active:opacity-80"
+                        >
+                          <HugeiconsIcon
+                            icon={Cancel01Icon}
+                            size={12}
+                            color="#737373"
+                          />
+                        </Pressable>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : (
+                <Text className="text-sm text-foreground/50">
+                  Nobody on this split yet. Use Add people to split.
                 </Text>
-                <Text className="text-xs text-foreground/50">
-                  Total $
-                  {Number.isFinite(totalNum) ? totalNum.toFixed(2) : "0.00"}
-                  {" · "}
-                  Assigned ${assignedSum.toFixed(2)}
-                  {" · "}
-                  Remaining $
-                  {remainingAmount.toFixed(2)}
-                  {overAssigned ? " · over" : ""}
-                  {assignedOk ? " · balanced" : ""}
-                </Text>
+              )}
+              <View className="gap-1.5 mt-2">
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  isDisabled={!hasParticipants}
+                  onPress={() => {
+                    if (!hasParticipants) return;
+                    setAmountPopoverOpen(true);
+                  }}
+                >
+                  <Button.Label>Assign money</Button.Label>
+                </Button>
+                {!hasParticipants ? (
+                  <Text className="text-xs text-foreground/50">
+                    Add people first, then you can split the bill.
+                  </Text>
+                ) : null}
               </View>
-            </Popover.Trigger>
-            {form.formState.errors.rivalIds ? (
-              <FieldError>
-                {form.formState.errors.rivalIds.message}
-              </FieldError>
-            ) : null}
+              {form.formState.errors.rivalIds ? (
+                <FieldError>
+                  {form.formState.errors.rivalIds.message}
+                </FieldError>
+              ) : null}
             </View>
 
             <Popover.Portal>
@@ -1078,7 +1075,7 @@ const SplitForm = () => {
                   ) : null}
                   {(rivalIdsWatched ?? []).map((rid) => {
                     const r = rivals?.find((x) => x._id === rid);
-                    const label = r ? r.nickname ?? r.name : "Rival";
+                    const label = r ? (r.nickname ?? r.name) : "Rival";
                     return (
                       <Controller
                         key={rid}
@@ -1100,8 +1097,7 @@ const SplitForm = () => {
                                 placeholder="0.00"
                                 keyboardType="decimal-pad"
                                 value={
-                                  field.value === 0 ||
-                                  field.value === undefined
+                                  field.value === 0 || field.value === undefined
                                     ? ""
                                     : String(field.value)
                                 }
@@ -1164,6 +1160,150 @@ const SplitForm = () => {
           </Button>
         </View>
       </ScrollView>
+
+      <BottomSheet
+        isOpen={participantDrawerOpen}
+        onOpenChange={(open) => {
+          setParticipantDrawerOpen(open);
+          if (!open) Keyboard.dismiss();
+        }}
+      >
+        <BottomSheet.Portal>
+          <BottomSheet.Overlay />
+          <BottomSheet.Content
+            snapPoints={["78%"]}
+            enableDynamicSizing={false}
+            enableContentPanningGesture={false}
+            backgroundClassName="rounded-t-3xl"
+            handleIndicatorClassName="bg-foreground/20"
+          >
+            <BottomSheet.Title className="px-4 pb-1 pt-2 text-lg font-semibold text-foreground">
+              Add people
+            </BottomSheet.Title>
+            <BottomSheet.Description className="px-4 pb-3 text-sm text-foreground/60">
+              Tap cards to include yourself and anyone you&apos;re splitting
+              with. Rivals come from your Rivals list.
+            </BottomSheet.Description>
+            <ScrollView
+              className="max-h-[420px] px-4"
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <Controller
+                control={form.control}
+                name="includeMe"
+                render={({ field }) => (
+                  <Card
+                    className={`mb-3 overflow-hidden border ${field.value ? "border-accent" : "border-border"}`}
+                  >
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: field.value }}
+                      onPress={() => field.onChange(!field.value)}
+                      className="flex-row items-center gap-3 p-3 active:opacity-90"
+                    >
+                      <View className="h-12 w-12 items-center justify-center rounded-full bg-accent/20">
+                        <Text className="text-base font-bold text-foreground">
+                          Me
+                        </Text>
+                      </View>
+                      <View className="min-w-0 flex-1">
+                        <Text className="font-semibold text-foreground">
+                          Yourself
+                        </Text>
+                        <Text className="text-xs text-foreground/50">
+                          Include your share of the bill
+                        </Text>
+                      </View>
+                      <Text className="text-lg text-accent">
+                        {field.value ? "✓" : ""}
+                      </Text>
+                    </Pressable>
+                  </Card>
+                )}
+              />
+              {rivals === undefined ? (
+                <Text className="py-4 text-sm text-foreground/60">
+                  Loading rivals…
+                </Text>
+              ) : rivals.length === 0 ? (
+                <Text className="py-2 text-sm text-foreground/60">
+                  No rivals yet. Add people from the Rivals tab to include them
+                  here.
+                </Text>
+              ) : (
+                <Controller
+                  control={form.control}
+                  name="rivalIds"
+                  render={({ field: rivalField }) => (
+                    <View className="gap-2 pb-2">
+                      {rivals.map((r) => {
+                        const displayName = r.nickname ?? r.name;
+                        const selected = rivalField.value.includes(r._id);
+                        return (
+                          <Card
+                            key={r._id}
+                            className={`overflow-hidden border ${selected ? "border-accent" : "border-border"}`}
+                          >
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityState={{ selected }}
+                              accessibilityLabel={`${selected ? "Remove" : "Add"} ${displayName}`}
+                              onPress={() => {
+                                const next = selected
+                                  ? rivalField.value.filter(
+                                      (id) => id !== r._id,
+                                    )
+                                  : [...rivalField.value, r._id];
+                                rivalField.onChange(next);
+                              }}
+                              className="flex-row items-center gap-3 p-3 active:opacity-90"
+                            >
+                              <Avatar
+                                alt={displayName}
+                                size="md"
+                                variant="soft"
+                                color="accent"
+                              >
+                                {r.image ? (
+                                  <Avatar.Image source={{ uri: r.image }} />
+                                ) : null}
+                                <Avatar.Fallback className="font-semibold">
+                                  {getInitials(displayName)}
+                                </Avatar.Fallback>
+                              </Avatar>
+                              <Text
+                                className="min-w-0 flex-1 font-semibold text-foreground"
+                                numberOfLines={1}
+                              >
+                                {displayName}
+                              </Text>
+                              <Text className="text-lg text-accent">
+                                {selected ? "✓" : ""}
+                              </Text>
+                            </Pressable>
+                          </Card>
+                        );
+                      })}
+                    </View>
+                  )}
+                />
+              )}
+            </ScrollView>
+            <View className="border-t border-border px-4 pb-6 pt-3">
+              <Button
+                variant="primary"
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setParticipantDrawerOpen(false);
+                }}
+              >
+                <Button.Label>Done</Button.Label>
+              </Button>
+            </View>
+          </BottomSheet.Content>
+        </BottomSheet.Portal>
+      </BottomSheet>
 
       <BottomSheet
         isOpen={datePickerOpen}
