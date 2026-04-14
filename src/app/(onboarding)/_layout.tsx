@@ -1,12 +1,12 @@
 import React, { useEffect, useLayoutEffect, useRef } from "react";
 import { ActivityIndicator, BackHandler, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { authClient } from "../../lib/auth-client";
+import { useAuthSession } from "../../lib/auth-middleware";
 import { ONBOARDING } from "./onboarding-theme";
 
 export default function OnboardingLayout() {
   const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useAuthSession();
   const didRedirect = useRef(false);
 
   useEffect(() => {

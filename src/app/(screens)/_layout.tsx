@@ -1,13 +1,16 @@
-import { Slot, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import React from "react";
+import { RequireAuth } from "../../lib/auth-middleware";
 
 const ScreenLayout = () => {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="ReviewItem" />
-      <Stack.Screen name="Notifications" />
-      <Stack.Screen name="NewSplit" />
-    </Stack>
+    <RequireAuth>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="ReviewItem" />
+        <Stack.Screen name="Notifications" />
+        <Stack.Screen name="NewSplit" />
+      </Stack>
+    </RequireAuth>
   );
 };
 

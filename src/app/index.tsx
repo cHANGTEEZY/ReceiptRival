@@ -1,8 +1,8 @@
 import "../global.css";
 import { Redirect } from "expo-router";
 import AuthSessionSplash from "../components/AuthSessionSplash";
+import { useAuthSession } from "../lib/auth-middleware";
 import { store } from "../lib/key-store";
-import { authClient } from "../lib/auth-client";
 
 export default function Index() {
   const isOnboardingComplete =
@@ -16,7 +16,7 @@ export default function Index() {
 }
 
 function PostOnboardingIndexRedirect() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useAuthSession();
 
   if (isPending) {
     return <AuthSessionSplash />;
