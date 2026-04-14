@@ -3,6 +3,7 @@ import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -21,6 +22,7 @@ import {
   TextField,
   useToast,
 } from "heroui-native";
+import { Popover } from "heroui-native/popover";
 import { Avatar } from "heroui-native/avatar";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,6 +82,68 @@ function formatDateDisplay(ymd: string | undefined) {
   });
 }
 
+/** Split `total` cents-evenly across Me (optional) + rivals; last bucket gets remainder. */
+function splitAmountsEvenly(
+  total: number,
+  includeMe: boolean,
+  rivalIds: string[],
+): { creatorAmount: number; rivalAmounts: Record<string, number> } {
+  const n = (includeMe ? 1 : 0) + rivalIds.length;
+  if (n === 0) {
+    return { creatorAmount: 0, rivalAmounts: {} };
+  }
+  const cents = Math.round(total * 100);
+  const base = Math.floor(cents / n);
+  const remainder = cents - base * n;
+  const parts: number[] = Array.from({ length: n }, (_, i) =>
+    i === n - 1 ? base + remainder : base,
+  );
+  let i = 0;
+  const creatorAmount = includeMe ? parts[i++]! / 100 : 0;
+  const rivalAmounts: Record<string, number> = {};
+  for (const rid of rivalIds) {
+    rivalAmounts[rid] = parts[i++]! / 100;
+  }
+  return { creatorAmount, rivalAmounts };
+}
+
+/** Cap “Me” so rivals’ shares + me never exceed `total`. */
+function clampMeAmount(
+  n: number,
+  total: number,
+  rivalIds: string[],
+  rivalAmounts: Record<string, number> | undefined,
+): number {
+  const safe = Number.isFinite(n) ? Math.max(0, n) : 0;
+  const rivalSum = rivalIds.reduce(
+    (acc, id) => acc + (rivalAmounts?.[id] ?? 0),
+    0,
+  );
+  const max = Math.max(0, total - rivalSum);
+  return Math.min(safe, max);
+}
+
+/** Cap a rival row so all rows + creator never exceed `total`. */
+function clampRivalAmount(
+  n: number,
+  total: number,
+  includeMe: boolean,
+  creatorAmount: number,
+  rivalIds: string[],
+  rivalAmounts: Record<string, number> | undefined,
+  editingRivalId: string,
+): number {
+  const safe = Number.isFinite(n) ? Math.max(0, n) : 0;
+  const myPart = includeMe ? creatorAmount : 0;
+  const others =
+    myPart +
+    rivalIds
+      .filter((id) => id !== editingRivalId)
+      .reduce((acc, id) => acc + (rivalAmounts?.[id] ?? 0), 0);
+  const max = Math.max(0, total - others);
+  return Math.min(safe, max);
+}
+
 const defaultItem = (): SplitsFormSchema["items"][number] => ({
   itemName: "",
   itemPrice: 0,
@@ -96,7 +160,10 @@ function getDefaultFormValues(): SplitsFormSchema {
     date: formatDateYmd(),
     time: "",
     location: "",
+    includeMe: true,
+    creatorAmount: 0,
     rivalIds: [],
+    rivalAmounts: {},
     items: [defaultItem()],
   };
 }
@@ -113,6 +180,14 @@ const SplitForm = () => {
   const qtyDraftRef = useRef<Record<string, string>>({});
   const dateAffordanceColor = colorScheme === "dark" ? "#a3a3a3" : "#737373";
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [amountPopoverOpen, setAmountPopoverOpen] = useState(false);
+
+  const dismissKeyboardAndCloseAmount = (open: boolean) => {
+    if (!open) {
+      Keyboard.dismiss();
+    }
+    setAmountPopoverOpen(open);
+  };
   const [datePickerWorking, setDatePickerWorking] = useState(() =>
     parseYmdToLocalDate(formatDateYmd()),
   );
@@ -139,11 +214,38 @@ const SplitForm = () => {
   const taxWatched = useWatch({ control: form.control, name: "tax" });
   const tipWatched = useWatch({ control: form.control, name: "tip" });
   const watchedTotal = useWatch({ control: form.control, name: "total" });
+  const includeMeWatched = useWatch({ control: form.control, name: "includeMe" });
+  const rivalIdsWatched = useWatch({ control: form.control, name: "rivalIds" });
+  const creatorAmountWatched = useWatch({
+    control: form.control,
+    name: "creatorAmount",
+  });
+  const rivalAmountsWatched = useWatch({
+    control: form.control,
+    name: "rivalAmounts",
+  });
   const totalDisplay = (() => {
     const n =
       typeof watchedTotal === "number" ? watchedTotal : Number(watchedTotal);
     return Number.isFinite(n) ? n.toFixed(2) : "0.00";
   })();
+
+  const rivalIdsKey = [...(rivalIdsWatched ?? [])].sort().join(",");
+
+  useEffect(() => {
+    const total =
+      typeof watchedTotal === "number" ? watchedTotal : Number(watchedTotal);
+    if (!Number.isFinite(total) || total < 0) return;
+    const includeMe = Boolean(includeMeWatched);
+    const rivalIds = rivalIdsWatched ?? [];
+    const { creatorAmount, rivalAmounts } = splitAmountsEvenly(
+      total,
+      includeMe,
+      rivalIds,
+    );
+    form.setValue("creatorAmount", creatorAmount, { shouldValidate: true });
+    form.setValue("rivalAmounts", rivalAmounts, { shouldValidate: true });
+  }, [watchedTotal, includeMeWatched, rivalIdsKey, form]);
 
   useEffect(() => {
     if (!items?.length) return;
@@ -187,6 +289,36 @@ const SplitForm = () => {
       ? { value: category, label: category }
       : { value: SPLIT_CATEGORIES[0], label: SPLIT_CATEGORIES[0] };
 
+  const applyEvenSplit = () => {
+    const total =
+      typeof watchedTotal === "number" ? watchedTotal : Number(watchedTotal);
+    if (!Number.isFinite(total)) return;
+    const { creatorAmount, rivalAmounts } = splitAmountsEvenly(
+      total,
+      Boolean(includeMeWatched),
+      rivalIdsWatched ?? [],
+    );
+    form.setValue("creatorAmount", creatorAmount, { shouldValidate: true });
+    form.setValue("rivalAmounts", rivalAmounts, { shouldValidate: true });
+    void form.trigger();
+  };
+
+  const assignedSum =
+    (includeMeWatched ? Number(creatorAmountWatched) || 0 : 0) +
+    (rivalIdsWatched ?? []).reduce(
+      (acc, id) => acc + (rivalAmountsWatched?.[id] ?? 0),
+      0,
+    );
+  const totalNum =
+    typeof watchedTotal === "number" ? watchedTotal : Number(watchedTotal);
+  const assignedOk =
+    Number.isFinite(totalNum) &&
+    Math.abs(assignedSum - totalNum) <= 0.011;
+  const remainingAmount =
+    Number.isFinite(totalNum) ? Math.max(0, totalNum - assignedSum) : 0;
+  const overAssigned =
+    Number.isFinite(totalNum) && assignedSum - totalNum > 0.011;
+
   const onSubmit = async (data: SplitsFormSchema) => {
     try {
       await createSplit({
@@ -203,7 +335,12 @@ const SplitForm = () => {
         tax: data.tax,
         tip: data.tip,
         total: data.total,
-        rivalIds: data.rivalIds as Id<"rivals">[],
+        includeMe: data.includeMe,
+        creatorAmount: data.includeMe ? data.creatorAmount : 0,
+        participants: data.rivalIds.map((rivalId) => ({
+          rivalId: rivalId as Id<"rivals">,
+          amount: data.rivalAmounts[rivalId] ?? 0,
+        })),
       });
       toast.show({
         variant: "success",
@@ -715,86 +852,305 @@ const SplitForm = () => {
             />
           </View>
 
-          <Controller
-            control={form.control}
-            name="rivalIds"
-            render={({ field }) => (
-              <View className="gap-2">
+          <Popover
+            presentation="bottom-sheet"
+            isOpen={amountPopoverOpen}
+            onOpenChange={dismissKeyboardAndCloseAmount}
+          >
+            <View className="gap-2">
+            <Text className="text-sm font-medium text-foreground">
+              Split with
+            </Text>
+            <Text className="text-xs text-foreground/50">
+              Include yourself and/or rivals, then tap below or a chip to set
+              amounts.
+            </Text>
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 12, paddingVertical: 4 }}
+            >
+              <Controller
+                control={form.control}
+                name="includeMe"
+                render={({ field }) => (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: field.value }}
+                    accessibilityLabel="Include yourself in the split"
+                    onPress={() => {
+                      field.onChange(!field.value);
+                      setAmountPopoverOpen(true);
+                    }}
+                    className="items-center gap-1.5"
+                  >
+                    <View
+                      className={`rounded-full p-0.5 ${field.value ? "bg-accent" : "bg-transparent"}`}
+                    >
+                      <View className="h-14 w-14 items-center justify-center rounded-full bg-accent/20">
+                        <Text className="text-lg font-bold text-foreground">
+                          Me
+                        </Text>
+                      </View>
+                    </View>
+                    <Text className="max-w-[72px] text-center text-xs text-foreground/80">
+                      Me
+                    </Text>
+                  </Pressable>
+                )}
+              />
+              <Controller
+                control={form.control}
+                name="rivalIds"
+                render={({ field: rivalField }) => (
+                  <>
+                    {rivals === undefined ? (
+                      <Text className="self-center text-sm text-foreground/60">
+                        Loading rivals…
+                      </Text>
+                    ) : rivals.length === 0 ? (
+                      <Text className="self-center text-sm text-foreground/60">
+                        No rivals yet.
+                      </Text>
+                    ) : (
+                      rivals.map((r) => {
+                        const displayName = r.nickname ?? r.name;
+                        const selected = rivalField.value.includes(r._id);
+                        return (
+                          <Pressable
+                            key={r._id}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected }}
+                            accessibilityLabel={`${selected ? "Remove" : "Add"} ${displayName} from split`}
+                            onPress={() => {
+                              const next = selected
+                                ? rivalField.value.filter((id) => id !== r._id)
+                                : [...rivalField.value, r._id];
+                              rivalField.onChange(next);
+                              setAmountPopoverOpen(true);
+                            }}
+                            className="items-center gap-1.5"
+                          >
+                            <View
+                              className={`rounded-full p-0.5 ${selected ? "bg-accent" : "bg-transparent"}`}
+                            >
+                              <Avatar
+                                alt={displayName}
+                                size="lg"
+                                variant="soft"
+                                color="accent"
+                                className={
+                                  selected
+                                    ? "border-2 border-background"
+                                    : "opacity-90"
+                                }
+                              >
+                                {r.image ? (
+                                  <Avatar.Image source={{ uri: r.image }} />
+                                ) : null}
+                                <Avatar.Fallback className="font-semibold">
+                                  {getInitials(displayName)}
+                                </Avatar.Fallback>
+                              </Avatar>
+                            </View>
+                            <Text
+                              className="max-w-[72px] text-center text-xs text-foreground/80"
+                              numberOfLines={1}
+                            >
+                              {displayName}
+                            </Text>
+                          </Pressable>
+                        );
+                      })
+                    )}
+                  </>
+                )}
+              />
+            </ScrollView>
+            <Popover.Trigger className="rounded-xl border border-border bg-background-secondary px-3 py-3 active:opacity-80">
+              <View>
                 <Text className="text-sm font-medium text-foreground">
-                  Split with
+                  Amounts
                 </Text>
                 <Text className="text-xs text-foreground/50">
-                  Tap a rival to add or remove them from this split.
+                  Total $
+                  {Number.isFinite(totalNum) ? totalNum.toFixed(2) : "0.00"}
+                  {" · "}
+                  Assigned ${assignedSum.toFixed(2)}
+                  {" · "}
+                  Remaining $
+                  {remainingAmount.toFixed(2)}
+                  {overAssigned ? " · over" : ""}
+                  {assignedOk ? " · balanced" : ""}
                 </Text>
-                {rivals === undefined ? (
-                  <Text className="text-sm text-foreground/60">
-                    Loading rivals…
-                  </Text>
-                ) : rivals.length === 0 ? (
-                  <Text className="text-sm text-foreground/60">
-                    No rivals yet. Add people from the Rivals tab to split bills
-                    with them.
-                  </Text>
-                ) : (
-                  <ScrollView
-                    horizontal
-                    nestedScrollEnabled
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ gap: 12, paddingVertical: 4 }}
-                  >
-                    {rivals.map((r) => {
-                      const displayName = r.nickname ?? r.name;
-                      const selected = field.value.includes(r._id);
-                      return (
-                        <Pressable
-                          key={r._id}
-                          accessibilityRole="button"
-                          accessibilityState={{ selected }}
-                          accessibilityLabel={`${selected ? "Remove" : "Add"} ${displayName} from split`}
-                          onPress={() => {
-                            const next = selected
-                              ? field.value.filter((id) => id !== r._id)
-                              : [...field.value, r._id];
-                            field.onChange(next);
-                          }}
-                          className="items-center gap-1.5"
-                        >
-                          <View
-                            className={`rounded-full p-0.5 ${selected ? "bg-accent" : "bg-transparent"}`}
-                          >
-                            <Avatar
-                              alt={displayName}
-                              size="lg"
-                              variant="soft"
-                              color="accent"
-                              className={
-                                selected
-                                  ? "border-2 border-background"
-                                  : "opacity-90"
-                              }
-                            >
-                              {r.image ? (
-                                <Avatar.Image source={{ uri: r.image }} />
-                              ) : null}
-                              <Avatar.Fallback className="font-semibold">
-                                {getInitials(displayName)}
-                              </Avatar.Fallback>
-                            </Avatar>
-                          </View>
-                          <Text
-                            className="max-w-[72px] text-center text-xs text-foreground/80"
-                            numberOfLines={1}
-                          >
-                            {displayName}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                )}
               </View>
-            )}
-          />
+            </Popover.Trigger>
+            {form.formState.errors.rivalIds ? (
+              <FieldError>
+                {form.formState.errors.rivalIds.message}
+              </FieldError>
+            ) : null}
+            </View>
+
+            <Popover.Portal>
+              <Popover.Overlay />
+              <Popover.Content
+                presentation="bottom-sheet"
+                snapPoints={["88%"]}
+                enableDynamicSizing={false}
+                enableContentPanningGesture={false}
+                backgroundClassName="rounded-t-3xl"
+                handleIndicatorClassName="bg-foreground/20"
+              >
+                <Popover.Title className="px-4 pb-1 pt-2 text-lg font-semibold text-foreground">
+                  Who owes what
+                </Popover.Title>
+                <Popover.Description className="px-4 pb-2 text-sm text-foreground/60">
+                  Total $
+                  {Number.isFinite(totalNum) ? totalNum.toFixed(2) : "0.00"} ·
+                  Assigned ${assignedSum.toFixed(2)} · Remaining $
+                  {remainingAmount.toFixed(2)}
+                  {assignedOk ? " (balanced)" : ""}.
+                </Popover.Description>
+                <View className="gap-1 px-4 pb-2">
+                  <Text
+                    className={`text-sm font-semibold ${overAssigned ? "text-danger" : "text-foreground"}`}
+                  >
+                    Remaining: ${remainingAmount.toFixed(2)} of $
+                    {Number.isFinite(totalNum) ? totalNum.toFixed(2) : "0.00"}
+                  </Text>
+                  {overAssigned ? (
+                    <Text className="text-xs text-danger">
+                      Assigned cannot exceed the bill total.
+                    </Text>
+                  ) : null}
+                </View>
+                <ScrollView
+                  className="max-h-[480px] px-4"
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                >
+                  {includeMeWatched ? (
+                    <Controller
+                      control={form.control}
+                      name="creatorAmount"
+                      render={({ field, fieldState }) => (
+                        <TextField
+                          isInvalid={Boolean(fieldState.error)}
+                          className="mb-3"
+                        >
+                          <Label>
+                            <Label.Text>Me</Label.Text>
+                          </Label>
+                          <InputGroup>
+                            <InputGroup.Prefix isDecorative>
+                              <Text className="text-foreground/60">$</Text>
+                            </InputGroup.Prefix>
+                            <InputGroup.Input
+                              placeholder="0.00"
+                              keyboardType="decimal-pad"
+                              value={
+                                field.value === 0
+                                  ? ""
+                                  : String(field.value ?? "")
+                              }
+                              onChangeText={(t) => {
+                                const cleaned = t.replace(/[^0-9.]/g, "");
+                                const n = parseFloat(cleaned);
+                                const capped = clampMeAmount(
+                                  Number.isFinite(n) ? n : 0,
+                                  Number.isFinite(totalNum) ? totalNum : 0,
+                                  rivalIdsWatched ?? [],
+                                  rivalAmountsWatched,
+                                );
+                                field.onChange(capped);
+                              }}
+                              onBlur={field.onBlur}
+                            />
+                          </InputGroup>
+                          {fieldState.error ? (
+                            <FieldError>{fieldState.error.message}</FieldError>
+                          ) : null}
+                        </TextField>
+                      )}
+                    />
+                  ) : null}
+                  {(rivalIdsWatched ?? []).map((rid) => {
+                    const r = rivals?.find((x) => x._id === rid);
+                    const label = r ? r.nickname ?? r.name : "Rival";
+                    return (
+                      <Controller
+                        key={rid}
+                        control={form.control}
+                        name={`rivalAmounts.${rid}` as const}
+                        render={({ field, fieldState }) => (
+                          <TextField
+                            isInvalid={Boolean(fieldState.error)}
+                            className="mb-3"
+                          >
+                            <Label>
+                              <Label.Text>{label}</Label.Text>
+                            </Label>
+                            <InputGroup>
+                              <InputGroup.Prefix isDecorative>
+                                <Text className="text-foreground/60">$</Text>
+                              </InputGroup.Prefix>
+                              <InputGroup.Input
+                                placeholder="0.00"
+                                keyboardType="decimal-pad"
+                                value={
+                                  field.value === 0 ||
+                                  field.value === undefined
+                                    ? ""
+                                    : String(field.value)
+                                }
+                                onChangeText={(t) => {
+                                  const cleaned = t.replace(/[^0-9.]/g, "");
+                                  const n = parseFloat(cleaned);
+                                  const capped = clampRivalAmount(
+                                    Number.isFinite(n) ? n : 0,
+                                    Number.isFinite(totalNum) ? totalNum : 0,
+                                    Boolean(includeMeWatched),
+                                    Number(creatorAmountWatched) || 0,
+                                    rivalIdsWatched ?? [],
+                                    rivalAmountsWatched,
+                                    rid,
+                                  );
+                                  field.onChange(capped);
+                                }}
+                                onBlur={field.onBlur}
+                              />
+                            </InputGroup>
+                            {fieldState.error ? (
+                              <FieldError>
+                                {fieldState.error.message}
+                              </FieldError>
+                            ) : null}
+                          </TextField>
+                        )}
+                      />
+                    );
+                  })}
+                </ScrollView>
+                <View className="gap-2 border-t border-border px-4 pb-6 pt-3">
+                  <Button variant="tertiary" onPress={applyEvenSplit}>
+                    <Button.Label>Split evenly</Button.Label>
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onPress={() => {
+                      void form.trigger().then((ok) => {
+                        if (ok) dismissKeyboardAndCloseAmount(false);
+                      });
+                    }}
+                  >
+                    <Button.Label>Done</Button.Label>
+                  </Button>
+                </View>
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover>
 
           <Button
             onPress={form.handleSubmit(onSubmit)}

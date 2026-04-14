@@ -41,6 +41,8 @@ const schema = defineSchema({
     tax: v.optional(v.number()),
     tip: v.optional(v.number()),
     total: v.number(),
+    /** Creator's share of `total` when "Me" is included; 0 otherwise. Optional for legacy rows. */
+    creatorAmount: v.optional(v.number()),
     completion_status: v.union(v.literal("pending"), v.literal("completed"), v.literal("cancelled")),
     userId: v.string(),
     createdAt: v.number(),
@@ -48,16 +50,19 @@ const schema = defineSchema({
   }).index("userId", ["userId"]),
 
   splitParticipants: defineTable({
-    splitId: v.id("splits"), 
+    splitId: v.id("splits"),
     rivalId: v.id("rivals"),
-    amount: v.number(),          
+    /** Denormalized from rivals.rivalUserId for "assigned to me" queries. Optional for legacy rows. */
+    participantUserId: v.optional(v.string()),
+    amount: v.number(),
     paid: v.boolean(),
     paidAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("splitId", ["splitId"])
-    .index("rivalId", ["rivalId"]),
+    .index("rivalId", ["rivalId"])
+    .index("by_participantUserId", ["participantUserId"]),
 });
 
 export default schema;
