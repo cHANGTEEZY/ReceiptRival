@@ -1,17 +1,17 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useMutation, useQuery } from "convex/react";
-import HeaderRoot from "../../components/composition/Header";
+import HeaderRoot from "../../../components/composition/Header";
 import { Avatar } from "heroui-native/avatar";
 import { Button } from "heroui-native/button";
 import { Card } from "heroui-native/card";
 import { Tabs } from "heroui-native/tabs";
-import { AddRivalDialog } from "../../features/Rivals/AddRivalDialog";
-import { api } from "../../../convex/_generated/api";
+import { AddRivalDialog } from "../../../features/Rivals/AddRivalDialog";
+import { api } from "../../../../convex/_generated/api";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Relieved02Icon } from "@hugeicons/core-free-icons";
 import { router } from "expo-router";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 type RivalRow = {
   _id: Id<"rivals">;
@@ -83,8 +83,8 @@ const RivalsScreen = () => {
             disabled={r.rivalStatus !== "accepted"}
             onPress={() =>
               router.push({
-                pathname: "/RivalDetail",
-                params: { id: r.rivalUserId },
+                pathname: "/rivals/[rivalId]",
+                params: { rivalId: r.rivalUserId },
               })
             }
             className="flex-row flex-1 items-start gap-3 active:opacity-80"

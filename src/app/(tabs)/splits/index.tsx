@@ -10,14 +10,14 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import HeaderRoot from "../../components/Header";
-import ListRowCard from "../../components/ListRowCard";
+import HeaderRoot from "../../../components/Header";
+import ListRowCard from "../../../components/ListRowCard";
 import { Button, Card, InputGroup } from "heroui-native";
 import { ArrowUp01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { getActivityCategoryIcon } from "../../lib/activity-category-icon";
+import { getActivityCategoryIcon } from "../../../lib/activity-category-icon";
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "../../../../convex/_generated/api";
 
 function formatMoney(amount: number): string {
   return `$${amount.toFixed(2)}`;

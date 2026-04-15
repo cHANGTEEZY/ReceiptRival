@@ -6,11 +6,7 @@ import { Platform } from "react-native";
 export default function TabLayout() {
   return (
     <RequireAuth>
-      {Platform.OS === "ios" ? (
-        <TabStackIos />
-      ) : (
-        <TabStackAndroid />
-      )}
+      {Platform.OS === "ios" ? <TabStackIos /> : <TabStackAndroid />}
     </RequireAuth>
   );
 }
@@ -22,7 +18,7 @@ function TabStackIos() {
         <Label>Home</Label>
         <Icon sf="house.fill" drawable="custom_android_drawable" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="splits">
+      <NativeTabs.Trigger name="splits/index">
         <Icon sf="list.bullet" drawable="custom_splits_drawable" />
         <Label>Splits</Label>
       </NativeTabs.Trigger>

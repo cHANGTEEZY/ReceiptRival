@@ -4,14 +4,14 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery } from "convex/react";
 import { Ionicons } from "@expo/vector-icons";
 import { useToast } from "heroui-native";
-import { api } from "../../../convex/_generated/api";
-import DetailsHeader from "../../components/composition/Header/DetailsHeader";
+import { api } from "../../../../convex/_generated/api";
+import DetailsHeader from "../../../components/composition/Header/DetailsHeader";
 import { Button } from "heroui-native/button";
 import { Dialog } from "heroui-native/dialog";
-import ListRowCard from "../../components/ListRowCard";
+import ListRowCard from "../../../components/ListRowCard";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
-import { RIVAL_ACTIONS } from "../../features/Rivals/data";
+import { RIVAL_ACTIONS } from "../../../features/Rivals/data";
 
 const RivalDetail = () => {
   const [isOpen, setIsOpen] = useState(false);
