@@ -1,19 +1,21 @@
 import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
-import { Redirect } from "expo-router";
-import AuthSessionSplash from "../../components/AuthSessionSplash";
-import { authClient } from "../../lib/auth-client";
+import { Tabs } from "expo-router";
+import { RequireAuth } from "../../lib/auth-middleware";
+import { Platform } from "react-native";
 
 export default function TabLayout() {
-  const { data: session, isPending } = authClient.useSession();
+  return (
+    <RequireAuth>
+      {Platform.OS === "ios" ? (
+        <TabStackIos />
+      ) : (
+        <TabStackAndroid />
+      )}
+    </RequireAuth>
+  );
+}
 
-  if (isPending) {
-    return <AuthSessionSplash />;
-  }
-
-  if (!session?.user) {
-    return <Redirect href="/(auth)/login" />;
-  }
-
+function TabStackIos() {
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
@@ -33,5 +35,16 @@ export default function TabLayout() {
         <Label>Profile</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
+  );
+}
+
+function TabStackAndroid() {
+  return (
+    <Tabs>
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="splits" options={{ title: "Splits" }} />
+      <Tabs.Screen name="rivals" options={{ title: "Rivals" }} />
+      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+    </Tabs>
   );
 }

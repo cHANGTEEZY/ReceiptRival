@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as ocr from "../ocr.js";
 import type * as rivals from "../rivals.js";
+import type * as splits from "../splits.js";
 
 import type {
   ApiFromModules,
@@ -24,6 +25,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   ocr: typeof ocr;
   rivals: typeof rivals;
+  splits: typeof splits;
 }>;
 
 /**

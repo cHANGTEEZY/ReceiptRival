@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,15 +15,40 @@ import ListRowCard from "../../components/ListRowCard";
 import { Button, Card, InputGroup } from "heroui-native";
 import { ArrowUp01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { formatUsd } from "../../lib/format-currency";
-import { SPLITS_ACTIVITY_ROWS } from "../../lib/data";
 import { getActivityCategoryIcon } from "../../lib/activity-category-icon";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+
+function formatMoney(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
+
+type TabKey = "all" | "assigned";
 
 const SplitsScreen = () => {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const inset = useSafeAreaInsets();
   const isDark = colorScheme === "dark";
+
+  const [tab, setTab] = useState<TabKey>("all");
+
+  const mySplits = useQuery(api.splits.getMySplits);
+  const assignedSplits = useQuery(api.splits.getAssignedSplits);
+
+  const pendingCount = useMemo(() => {
+    if (!mySplits) return 0;
+    return mySplits.filter((s) => s.completion_status === "pending").length;
+  }, [mySplits]);
+
+  const myTotalPending = useMemo(() => {
+    if (!mySplits) return 0;
+    return mySplits
+      .filter((s) => s.completion_status === "pending")
+      .reduce((a, s) => a + s.total, 0);
+  }, [mySplits]);
+
+  const listLoading = mySplits === undefined || assignedSplits === undefined;
 
   return (
     <View className="flex-1 bg-background">
@@ -49,7 +75,7 @@ const SplitsScreen = () => {
           <Card className="overflow-hidden">
             <Card.Body className="gap-1 pb-4 pt-4">
               <Text className="text-5xl font-bold tracking- text-purple-400">
-                $1,240.50
+                {formatMoney(myTotalPending)}
               </Text>
               <View className="flex-row items-center gap-1.5">
                 <View className="rounded-full bg-lime-400/15 p-1">
@@ -59,9 +85,11 @@ const SplitsScreen = () => {
                     color="#a3e635"
                   />
                 </View>
-                <Text className="text-sm font-medium text-lime-400">+12%</Text>
+                <Text className="text-sm font-medium text-lime-400">
+                  Pending
+                </Text>
                 <Text className="text-sm text-foreground/50">
-                  from last week
+                  across your open splits
                 </Text>
               </View>
             </Card.Body>
@@ -71,14 +99,14 @@ const SplitsScreen = () => {
                   <View className="gap-0.5">
                     <Text className="text-xs text-foreground/50">Pending</Text>
                     <Text className="text-base font-semibold text-foreground">
-                      3 splits
+                      {pendingCount} splits
                     </Text>
                   </View>
                   <View className="w-px bg-border" style={{ height: "100%" }} />
                   <View className="gap-0.5">
-                    <Text className="text-xs text-foreground/50">People</Text>
+                    <Text className="text-xs text-foreground/50">Assigned</Text>
                     <Text className="text-base font-semibold text-foreground">
-                      5 owing
+                      {assignedSplits?.length ?? "—"} shares
                     </Text>
                   </View>
                 </View>
@@ -100,68 +128,179 @@ const SplitsScreen = () => {
             <InputGroup.Input placeholder="Search your splits…" />
           </InputGroup>
 
-          <View className="flex-row items-center justify-between">
-            <Text className="text-2xl font-bold text-foreground">
-              All splits
-            </Text>
+          <View className="flex-row gap-2">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: tab === "all" }}
+              onPress={() => setTab("all")}
+              className={`flex-1 rounded-xl border px-3 py-2.5 ${
+                tab === "all"
+                  ? "border-accent bg-accent/15"
+                  : "border-border bg-background-secondary"
+              }`}
+            >
+              <Text
+                className={`text-center text-sm font-semibold ${
+                  tab === "all" ? "text-accent" : "text-foreground/80"
+                }`}
+              >
+                All splits
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: tab === "assigned" }}
+              onPress={() => setTab("assigned")}
+              className={`flex-1 rounded-xl border px-3 py-2.5 ${
+                tab === "assigned"
+                  ? "border-accent bg-accent/15"
+                  : "border-border bg-background-secondary"
+              }`}
+            >
+              <Text
+                className={`text-center text-sm font-semibold ${
+                  tab === "assigned" ? "text-accent" : "text-foreground/80"
+                }`}
+              >
+                Assigned splits
+              </Text>
+            </Pressable>
           </View>
 
           <View className="gap-3">
-            {SPLITS_ACTIVITY_ROWS.map((item) => {
-              const categoryIcon = getActivityCategoryIcon(
-                item.subtitle.category,
-              );
-              const iconMuted = isDark ? "#c4c4c4" : "#525252";
-              const metaLine = `${item.subtitle.timeStamp} • ${item.subtitle.category}`;
-              const splitLabel = `split ${item.split}`.toUpperCase();
+            {listLoading ? (
+              <Text className="text-sm text-foreground/60">
+                Loading splits…
+              </Text>
+            ) : tab === "all" ? (
+              mySplits.length === 0 ? (
+                <Text className="text-sm text-foreground/60">
+                  No splits yet. Create one to get started.
+                </Text>
+              ) : (
+                mySplits.map((item) => {
+                  const categoryIcon = getActivityCategoryIcon(item.category);
+                  const iconMuted = isDark ? "#c4c4c4" : "#525252";
+                  const metaLine = `${item.date ?? "—"} • ${item.category}`;
+                  const statusLabel = item.completion_status.toUpperCase();
 
-              return (
-                <ListRowCard
-                  key={item.id}
-                  rowVariant="leaderboard"
-                  variant="secondary"
-                  className="border-border bg-background px-0 py-0"
-                  bodyClassName="px-3 py-3"
-                  isPressable
-                >
-                  <ListRowCard.Icon
-                    alt={`${item.title}, ${item.subtitle.category}`}
-                    color="default"
-                    className="rounded-2xl"
+                  return (
+                    <ListRowCard
+                      key={item._id}
+                      rowVariant="leaderboard"
+                      variant="secondary"
+                      className="border-border bg-background px-0 py-0"
+                      bodyClassName="px-3 py-3"
+                      isPressable
+                    >
+                      <ListRowCard.Icon
+                        alt={`${item.title}, ${item.category}`}
+                        color="default"
+                        className="rounded-2xl"
+                      >
+                        <Ionicons
+                          name={categoryIcon}
+                          size={24}
+                          color={iconMuted}
+                        />
+                      </ListRowCard.Icon>
+
+                      <ListRowCard.Content>
+                        <ListRowCard.Title
+                          numberOfLines={2}
+                          className="flex-row justify-center gap-1 text-foreground"
+                        >
+                          <Text className="text-xl">{item.title}</Text>
+                        </ListRowCard.Title>
+                        <ListRowCard.Subtitle
+                          numberOfLines={1}
+                          className="text-foreground/80"
+                        >
+                          {metaLine}
+                        </ListRowCard.Subtitle>
+                      </ListRowCard.Content>
+
+                      <ListRowCard.Trailing>
+                        <ListRowCard.Item>
+                          <Text className="text-foreground">
+                            {formatMoney(item.total)}
+                          </Text>
+                        </ListRowCard.Item>
+                        <ListRowCard.Item className="pt-1">
+                          <Text className="text-base font-semibold uppercase tracking-wide text-lime-400">
+                            {statusLabel}
+                          </Text>
+                        </ListRowCard.Item>
+                      </ListRowCard.Trailing>
+                    </ListRowCard>
+                  );
+                })
+              )
+            ) : assignedSplits.length === 0 ? (
+              <Text className="text-sm text-foreground/60">
+                Nothing assigned to you yet.
+              </Text>
+            ) : (
+              assignedSplits.map(({ split, assignedAmount }) => {
+                const categoryIcon = getActivityCategoryIcon(split.category);
+                const iconMuted = isDark ? "#c4c4c4" : "#525252";
+                const metaLine = `${split.date ?? "—"} • ${split.category}`;
+
+                return (
+                  <ListRowCard
+                    key={split._id}
+                    rowVariant="leaderboard"
+                    variant="secondary"
+                    className="border-border bg-background px-0 py-0"
+                    bodyClassName="px-3 py-3"
+                    isPressable
                   >
-                    <Ionicons name={categoryIcon} size={24} color={iconMuted} />
-                  </ListRowCard.Icon>
-
-                  <ListRowCard.Content>
-                    <ListRowCard.Title
-                      numberOfLines={2}
-                      className="flex-row justify-center gap-1 text-foreground"
+                    <ListRowCard.Icon
+                      alt={`${split.title}, ${split.category}`}
+                      color="default"
+                      className="rounded-2xl"
                     >
-                      <Text className="text-xl">{item.title}</Text>
-                    </ListRowCard.Title>
-                    <ListRowCard.Subtitle
-                      numberOfLines={1}
-                      className="text-foreground/80"
-                    >
-                      {metaLine}
-                    </ListRowCard.Subtitle>
-                  </ListRowCard.Content>
+                      <Ionicons
+                        name={categoryIcon}
+                        size={24}
+                        color={iconMuted}
+                      />
+                    </ListRowCard.Icon>
 
-                  <ListRowCard.Trailing>
-                    <ListRowCard.Item>
-                      <Text className="text-foreground">
-                        {formatUsd(item.amount)}
-                      </Text>
-                    </ListRowCard.Item>
-                    <ListRowCard.Item className="pt-1">
-                      <Text className="text-base font-semibold uppercase tracking-wide text-lime-400">
-                        {splitLabel}
-                      </Text>
-                    </ListRowCard.Item>
-                  </ListRowCard.Trailing>
-                </ListRowCard>
-              );
-            })}
+                    <ListRowCard.Content>
+                      <ListRowCard.Title
+                        numberOfLines={2}
+                        className="flex-row justify-center gap-1 text-foreground"
+                      >
+                        <Text className="text-xl">{split.title}</Text>
+                      </ListRowCard.Title>
+                      <ListRowCard.Subtitle
+                        numberOfLines={1}
+                        className="text-foreground/80"
+                      >
+                        {metaLine}
+                      </ListRowCard.Subtitle>
+                    </ListRowCard.Content>
+
+                    <ListRowCard.Trailing>
+                      <ListRowCard.Item>
+                        <Text className="text-right text-foreground">
+                          {formatMoney(assignedAmount)}
+                        </Text>
+                        <Text className="text-right text-xs text-foreground/50">
+                          of {formatMoney(split.total)} bill
+                        </Text>
+                      </ListRowCard.Item>
+                      <ListRowCard.Item className="pt-1">
+                        <Text className="text-base font-semibold uppercase tracking-wide text-lime-400">
+                          YOUR SHARE
+                        </Text>
+                      </ListRowCard.Item>
+                    </ListRowCard.Trailing>
+                  </ListRowCard>
+                );
+              })
+            )}
           </View>
         </View>
       </ScrollView>
