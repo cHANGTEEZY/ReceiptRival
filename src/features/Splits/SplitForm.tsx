@@ -84,7 +84,6 @@ function formatDateDisplay(ymd: string | undefined) {
   });
 }
 
-/** Split `total` cents-evenly across Me (optional) + rivals; last bucket gets remainder. */
 function splitAmountsEvenly(
   total: number,
   includeMe: boolean,
@@ -109,7 +108,6 @@ function splitAmountsEvenly(
   return { creatorAmount, rivalAmounts };
 }
 
-/** Cap “Me” so rivals’ shares + me never exceed `total`. */
 function clampMeAmount(
   n: number,
   total: number,
@@ -125,7 +123,6 @@ function clampMeAmount(
   return Math.min(safe, max);
 }
 
-/** Cap a rival row so all rows + creator never exceed `total`. */
 function clampRivalAmount(
   n: number,
   total: number,

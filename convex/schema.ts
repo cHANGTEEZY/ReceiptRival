@@ -1,4 +1,4 @@
-import { defineSchema, defineTable } from "convex/server";
+import { defineApp, defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
@@ -43,7 +43,11 @@ const schema = defineSchema({
     total: v.number(),
     /** Creator's share of `total` when "Me" is included; 0 otherwise. Optional for legacy rows. */
     creatorAmount: v.optional(v.number()),
-    completion_status: v.union(v.literal("pending"), v.literal("completed"), v.literal("cancelled")),
+    completion_status: v.union(
+      v.literal("pending"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+    ),
     userId: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -64,6 +68,18 @@ const schema = defineSchema({
     .index("rivalId", ["rivalId"])
     .index("by_participantUserId", ["participantUserId"]),
 
+  payments: defineTable({
+    splitId: v.id("splits"),
+    splitParticipantId: v.id("splitParticipants"),
+    recordedByUserId: v.string(),
+    amount: v.number(),
+    note: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("splitId", ["splitId"])
+    .index("splitParticipantId", ["splitParticipantId"])
+    .index("by_recordedByUserId", ["recordedByUserId"]),
 });
 
 export default schema;
