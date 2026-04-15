@@ -12,17 +12,16 @@ import {
   useColorScheme,
   View,
 } from "react-native";
-import {
-  BottomSheet,
-  Button,
-  Card,
-  FieldError,
-  InputGroup,
-  Label,
-  Select,
-  TextField,
-  useToast,
-} from "heroui-native";
+import { BottomSheet } from "heroui-native/bottom-sheet";
+import { Button } from "heroui-native/button";
+import { TextField } from "heroui-native/text-field";
+import { Label } from "heroui-native/label";
+import { InputGroup } from "heroui-native/input-group";
+import { Select } from "heroui-native/select";
+import { Spinner } from "heroui-native/spinner";
+import { useToast } from "heroui-native/toast";
+import { FieldError } from "heroui-native/field-error";
+import { Card } from "heroui-native/card";
 import { Popover } from "heroui-native/popover";
 import { Avatar } from "heroui-native/avatar";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
@@ -32,6 +31,8 @@ import {
   ArrowDown01Icon,
   Calendar03Icon,
   Cancel01Icon,
+  Loading01Icon,
+  Loading02Icon,
   SaveIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
@@ -1151,10 +1152,28 @@ const SplitForm = () => {
             isDisabled={form.formState.isSubmitting}
             className="mt-2 rounded-xl "
           >
-            <Button.Label className="text-base font-bold">
-              Save split
-            </Button.Label>
-            <HugeiconsIcon icon={SaveIcon} size={20} color="#ffffff" />
+            {!form.formState.isSubmitting ? (
+              <View className="flex-row items-center gap-1 justify-center">
+                <Text className="text-lg text-foreground/90">Saving</Text>
+
+                <Spinner className="flex-row items-center justify-center">
+                  <Spinner.Indicator>
+                    <HugeiconsIcon
+                      icon={Loading02Icon}
+                      size={20}
+                      color={colorScheme === "dark" ? "#ffffff" : "#000000"}
+                    />
+                  </Spinner.Indicator>
+                </Spinner>
+              </View>
+            ) : (
+              <>
+                <Button.Label className="text-base font-bold">
+                  Save split
+                </Button.Label>
+                <HugeiconsIcon icon={SaveIcon} size={20} color="#ffffff" />
+              </>
+            )}
           </Button>
         </View>
       </ScrollView>
