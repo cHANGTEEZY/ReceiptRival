@@ -1140,11 +1140,7 @@ const SplitForm = () => {
                   </Button>
                   <Button
                     variant="primary"
-                    onPress={() => {
-                      void form.trigger().then((ok) => {
-                        if (ok) dismissKeyboardAndCloseAmount(false);
-                      });
-                    }}
+                    onPress={() => dismissKeyboardAndCloseAmount(false)}
                   >
                     <Button.Label>Done</Button.Label>
                   </Button>
@@ -1299,6 +1295,7 @@ const SplitForm = () => {
               <Button
                 variant="primary"
                 onPress={() => {
+                  setAmountPopoverOpen(false);
                   Keyboard.dismiss();
                   setParticipantDrawerOpen(false);
                 }}

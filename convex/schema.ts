@@ -63,6 +63,7 @@ const schema = defineSchema({
     .index("splitId", ["splitId"])
     .index("rivalId", ["rivalId"])
     .index("by_participantUserId", ["participantUserId"]),
+
 });
 
 export default schema;
