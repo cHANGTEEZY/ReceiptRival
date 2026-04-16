@@ -102,7 +102,7 @@ const SplitDetails = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: inset.bottom + 24,
+          paddingBottom: inset.bottom + 70,
           paddingHorizontal: 20,
           paddingTop: 12,
         }}
