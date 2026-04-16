@@ -1,4 +1,4 @@
-import { Platform, Text, View } from "react-native";
+import { Platform, Text, useColorScheme, View } from "react-native";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 import { ReceiptDottedRow } from "./ReceiptDottedRow";
 import {
@@ -6,6 +6,9 @@ import {
   formatMoney,
   formatReceiptDate,
 } from "./formatting";
+import { Button } from "heroui-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { Money01Icon } from "@hugeicons/core-free-icons";
 
 const mono = {
   fontFamily: Platform.select({
@@ -24,6 +27,7 @@ export function SplitReceiptSection({ split }: Props) {
   const dateLine = formatReceiptDate(split.date, split.createdAt);
   const timeSuffix = split.time?.trim() ? ` · ${split.time}` : "";
 
+  const colorScheme = useColorScheme();
   return (
     <View className="mb-1 overflow-hidden rounded-2xl border border-border bg-background-secondary px-4 py-5 shadow-sm">
       <Text
@@ -98,9 +102,14 @@ export function SplitReceiptSection({ split }: Props) {
         &quot;You feasted like kings, now pay like rivals. No refunds for
         pride.&quot;
       </Text>
-      <Text className="mt-2 text-center text-muted-foreground/80" style={mono}>
-        ···
-      </Text>
+
+      <Button className="mt-3 items-center justify-center" variant="primary">
+        <HugeiconsIcon
+          icon={Money01Icon}
+          color={colorScheme === "dark" ? "#ffffff" : "#000000"}
+        />
+        <Button.Label>Pay your share</Button.Label>
+      </Button>
     </View>
   );
 }
