@@ -18,7 +18,7 @@ function TabStackIos() {
         <Label>Home</Label>
         <Icon sf="house.fill" drawable="custom_android_drawable" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="splits/index">
+      <NativeTabs.Trigger name="splits">
         <Icon sf="list.bullet" drawable="custom_splits_drawable" />
         <Label>Splits</Label>
       </NativeTabs.Trigger>

@@ -192,6 +192,7 @@ const SplitsScreen = () => {
                       className="border-border bg-background px-0 py-0"
                       bodyClassName="px-3 py-3"
                       isPressable
+                      onPress={() => router.push(`/splits/${item._id}`)}
                     >
                       <ListRowCard.Icon
                         alt={`${item.title}, ${item.category}`}

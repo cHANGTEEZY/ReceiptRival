@@ -1,7 +1,9 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
+import { components } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
+import type { Doc as UserDoc } from "./betterAuth/_generated/dataModel";
 
 type RivalDoc = Doc<"rivals">;
 
@@ -232,5 +234,102 @@ export const getAssignedSplits = query({
     return Array.from(merged.values()).sort(
       (a, b) => b.split.createdAt - a.split.createdAt,
     );
+  },
+});
+
+/** Split + participants for the receipt detail screen (creator or assigned rival only). */
+export const getSplitDetail = query({
+  args: { splitId: v.id("splits") },
+  handler: async (ctx, args) => {
+    const me = await authComponent.safeGetAuthUser(ctx);
+    if (!me) {
+      throw new ConvexError("Unauthenticated");
+    }
+    const meId = String(me._id);
+
+    const split = await ctx.db.get(args.splitId);
+    if (!split) {
+      return null;
+    }
+
+    const participants = await ctx.db
+      .query("splitParticipants")
+      .withIndex("splitId", (q) => q.eq("splitId", args.splitId))
+      .collect();
+
+    const isCreator = split.userId === meId;
+    const isParticipant = participants.some(
+      (p) => p.participantUserId === meId,
+    );
+    if (!isCreator && !isParticipant) {
+      throw new ConvexError("You don't have access to this split.");
+    }
+
+    const rivalDocs = await Promise.all(
+      participants.map((p) => ctx.db.get(p.rivalId)),
+    );
+
+    const userIds = new Set<string>();
+    userIds.add(split.userId);
+    for (let i = 0; i < participants.length; i++) {
+      const r = rivalDocs[i];
+      if (r) userIds.add(r.rivalUserId);
+    }
+
+    const ids = [...userIds];
+    const { page: users } = await ctx.runQuery(
+      components.betterAuth.adapter.findMany,
+      {
+        model: "user",
+        paginationOpts: { cursor: null, numItems: 200 },
+        where: [{ field: "_id", operator: "in", value: ids }],
+      },
+    );
+
+    const byId = new Map<string, UserDoc<"user">>(
+      (users as UserDoc<"user">[]).map((u) => [u._id, u]),
+    );
+
+    const creatorAmount = split.creatorAmount ?? 0;
+
+    const rivals = participants
+      .map((p, i) => {
+        const rival = rivalDocs[i];
+        if (!rival) return null;
+        const u = byId.get(rival.rivalUserId);
+        return {
+          participantId: p._id,
+          amount: p.amount,
+          paid: p.paid,
+          paidAt: p.paidAt,
+          displayName: rival.nickname ?? u?.name ?? "Rival",
+          image: u?.image ?? null,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
+
+    const creatorUser = byId.get(split.userId);
+    const creatorRow =
+      creatorAmount > AMOUNT_TOLERANCE
+        ? {
+            amount: creatorAmount,
+            settled: split.completion_status === "completed",
+            displayName: isCreator ? "You" : (creatorUser?.name ?? "Host"),
+            image: creatorUser?.image ?? null,
+          }
+        : null;
+
+    const settledCount =
+      (creatorRow?.settled ? 1 : 0) + rivals.filter((r) => r.paid).length;
+    const totalPeople = (creatorRow ? 1 : 0) + rivals.length;
+
+    return {
+      split,
+      creatorRow,
+      rivals,
+      viewerIsCreator: isCreator,
+      settledCount,
+      totalPeople,
+    };
   },
 });
